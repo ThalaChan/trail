@@ -12,9 +12,10 @@
 
 Connect to your simulation data via PostgreSQL or by uploading a run Excel file.
 
+![Landing page](docs/screenshots/landing_page.png)
+
 ![Login page](docs/screenshots/login_page.png)
 
-![Landing page](docs/screenshots/landing_page.png)
 
 ---
 
