@@ -1,0 +1,2203 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full w-full" id="root-html">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>IIT Bombay UTM Command</title>
+<script src="https://cdn.tailwindcss.com/3.4.1"></script>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Noto+Sans+Devanagari:wght@400;700&display=swap" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+tailwind.config={theme:{extend:{
+  fontFamily:{sans:['Space Grotesk','sans-serif'],display:['Bebas Neue','sans-serif'],mono:['JetBrains Mono','monospace']},
+  colors:{brand:{bg:'#FAF7F2',sidebar:'#F3EFE9',card:'rgba(255,255,255,0.55)',border:'#E5DED4',text:'#333333',muted:'#777777',accent:'#FF6B00',success:'#046A38',warning:'#ff9800',danger:'#f44336',blue:'#3B82F6',purple:'#9c27b0'}},
+  boxShadow:{custom:'0 4px 20px rgba(0,0,0,0.03)'}
+}}}
+</script>
+<style>
+/* Critical layout — works even if Tailwind CDN is slow to load */
+*,*::before,*::after{box-sizing:border-box;}
+html,body{margin:0;padding:0;height:100%;overflow:hidden;background:#FAF7F2;font-family:'Space Grotesk',sans-serif;color:#333;}
+.h-screen{height:100vh!important;}
+.w-screen{width:100vw!important;}
+.overflow-hidden{overflow:hidden!important;}
+.flex{display:flex!important;}
+.flex-col{flex-direction:column!important;}
+.h-full{height:100%!important;}
+.fixed{position:fixed!important;}
+.inset-0{top:0!important;right:0!important;bottom:0!important;left:0!important;}
+.z-\[9999\]{z-index:9999!important;}
+.items-center{align-items:center!important;}
+.justify-center{justify-content:center!important;}
+.hidden{display:none!important;}
+.glass-panel{background:rgba(255,255,255,0.55);backdrop-filter:blur(12px);border:1px solid #E5DED4;}
+.bg-brand-accent,.bg-\[\#FF6B00\]{background-color:#FF6B00;}
+.metric-value{font-family:'Bebas Neue',sans-serif;letter-spacing:0.05em;}
+.login-tab{padding:8px 20px;font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#777;cursor:pointer;border-bottom:2px solid transparent;transition:all .15s;}
+.login-tab.active-tab{color:#FF6B00;border-bottom-color:#FF6B00;}
+.scrollbar-hide::-webkit-scrollbar{display:none;}
+.scrollbar-hide{-ms-overflow-style:none;scrollbar-width:none;}
+#leaflet-map{width:100%;height:100%;z-index:1;}
+.leaflet-control-zoom{margin:8px!important;}
+.leaflet-control-attribution{font-size:7px!important;opacity:.5;}
+
+body{background-color:#FAF7F2;color:#333;}
+.scrollbar-hide::-webkit-scrollbar{display:none;}.scrollbar-hide{-ms-overflow-style:none;scrollbar-width:none;}
+.glass-panel{background:rgba(255,255,255,0.55);backdrop-filter:blur(12px);border:1px solid #E5DED4;}
+.metric-value{font-family:'Bebas Neue',sans-serif;letter-spacing:0.05em;}
+.login-tab{padding:8px 20px;font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#777;cursor:pointer;border-bottom:2px solid transparent;transition:all .15s;}
+.login-tab.active-tab{color:#FF6B00;border-bottom-color:#FF6B00;}
+#leaflet-map{width:100%;height:100%;z-index:1;}
+.leaflet-control-zoom{margin:8px!important;}
+.leaflet-control-attribution{font-size:7px!important;opacity:.5;}
+</style>
+
+  <!-- Fix 5: Dark tooltip CSS + Leaflet popup theme -->
+  <style>
+    /* Leaflet popup — dashboard theme */
+    .as-popup .leaflet-popup-content-wrapper,
+    .in-popup .leaflet-popup-content-wrapper {
+      background: #1E293B !important;
+      color: #F8FAFC !important;
+      border: 1px solid #334155 !important;
+      border-radius: 10px !important;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.4) !important;
+      padding: 0 !important;
+    }
+    .as-popup .leaflet-popup-content-wrapper .leaflet-popup-content,
+    .in-popup .leaflet-popup-content-wrapper .leaflet-popup-content {
+      margin: 10px 14px !important;
+      color: #F8FAFC !important;
+    }
+    .as-popup .leaflet-popup-tip,
+    .in-popup .leaflet-popup-tip {
+      background: #1E293B !important;
+    }
+    /* Chart.js tooltip override: ensure dark bg across all pages */
+    .chartjs-tooltip {
+      background: #1E293B !important;
+      color: #F8FAFC !important;
+      border-radius: 8px !important;
+      padding: 8px 12px !important;
+    }
+  </style>
+<style>
+  /* ── Landing page styles ── */
+  @keyframes droneHover {
+    0%,100% { transform: translate(-50%,-50%) translateY(0px) rotate(0deg); }
+    50%      { transform: translate(-50%,-50%) translateY(-14px) rotate(1deg); }
+  }
+  .phantom-drone-container { animation: droneHover 3.5s ease-in-out infinite; }
+  @keyframes drawPath1 { from { stroke-dashoffset: 1000; } to { stroke-dashoffset: 0; } }
+  @keyframes drawPath2 { from { stroke-dashoffset: 1200; } to { stroke-dashoffset: 0; } }
+  @keyframes drawPath3 { from { stroke-dashoffset: 900;  } to { stroke-dashoffset: 0; } }
+  @keyframes drawPath4 { from { stroke-dashoffset: 1100; } to { stroke-dashoffset: 0; } }
+  .flight-path-1 { stroke-dasharray:1000; stroke-dashoffset:1000; animation: drawPath1 8s linear infinite; }
+  .flight-path-2 { stroke-dasharray:1200; stroke-dashoffset:1200; animation: drawPath2 11s linear infinite; }
+  .flight-path-3 { stroke-dasharray:900;  stroke-dashoffset:900;  animation: drawPath3 14s linear infinite; }
+  .flight-path-4 { stroke-dasharray:1100; stroke-dashoffset:1100; animation: drawPath4 17s linear infinite reverse; }
+  @keyframes iitPulse { 0%,100%{r:5;opacity:0.8;} 50%{r:18;opacity:0;} }
+  .iit-pulse { animation: iitPulse 2.5s ease-out infinite; }
+  @keyframes radarRotate { from{transform:rotate(0deg);} to{transform:rotate(360deg);} }
+  .radar-sweep-anim { background: conic-gradient(from 0deg, transparent 0%, rgba(255,107,0,0.15) 40%, transparent 100%); animation: radarRotate 4s linear infinite; }
+  @keyframes blink2 { 0%,100%{opacity:1;} 50%{opacity:0.3;} }
+  .status-blink2 { animation: blink2 2s infinite; }
+  @keyframes rotorSpin { from{transform:rotateY(0deg);} to{transform:rotateY(360deg);} }
+  .rotor-blade2 { animation: rotorSpin 0.1s linear infinite; transform-origin:center; }
+  @keyframes floatUp { to { transform:translateY(-110vh); opacity:0; } }
+  .particle2 { position:absolute; bottom:-10px; animation: floatUp var(--d) linear infinite; opacity:0.3; }
+  .reveal2 { opacity:0; transform:translateY(24px); transition: opacity 0.8s ease-out, transform 0.8s ease-out; }
+  .reveal2.active { opacity:1; transform:translateY(0); }
+  .tricolor-bar2 { height:2px; width:100px; background:linear-gradient(90deg,#FF9933 33%,#FFFFFF 33%,#FFFFFF 66%,#138808 66%); }
+  .scan-beam2 { position:absolute;top:0;left:-100%;width:50%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,107,0,0.06),transparent);transform:skewX(-25deg);transition:left 0.5s; }
+  .module-card2:hover .scan-beam2 { left:150%; }
+  #landing-progress-bar { position:fixed;top:0;left:0;height:3px;background:#FF6B00;z-index:99999;width:0%;transition:width 0.1s; }
+  .landing-grid-bg { background-image: linear-gradient(rgba(200,185,165,0.18) 1px, transparent 1px), linear-gradient(90deg, rgba(200,185,165,0.18) 1px, transparent 1px); background-size:48px 48px; }
+  @keyframes borderTrace { from{stroke-dashoffset:600;} to{stroke-dashoffset:0;} }
+  .btn-trace2 { animation: borderTrace 2s linear infinite; stroke-dasharray:600; stroke-dashoffset:600; }
+</style>
+</head>
+<body class="font-sans bg-brand-bg" id="root-body" style="background-image:linear-gradient(rgba(200,185,165,0.18) 1px,transparent 1px),linear-gradient(90deg,rgba(200,185,165,0.18) 1px,transparent 1px);background-size:48px 48px;">
+
+<!-- ═══════════ LANDING PAGE OVERLAY ═══════════ -->
+<div id="landing-page" style="position:fixed;inset:0;z-index:88888;overflow-y:auto;background:#FAF7F2;background-image:linear-gradient(rgba(200,185,165,0.18) 1px,transparent 1px),linear-gradient(90deg,rgba(200,185,165,0.18) 1px,transparent 1px);background-size:48px 48px;">
+
+<div id="landing-progress-bar"></div>
+
+<!-- Fixed background animations -->
+<style>
+@keyframes dp1{from{stroke-dashoffset:1400}to{stroke-dashoffset:0}}
+@keyframes dp2{from{stroke-dashoffset:1400}to{stroke-dashoffset:0}}
+@keyframes dp3{from{stroke-dashoffset:1000}to{stroke-dashoffset:0}}
+@keyframes dp4{from{stroke-dashoffset:1400}to{stroke-dashoffset:0}}
+@keyframes mdot{from{offset-distance:0%}to{offset-distance:100%}}
+@keyframes ping2{0%{r:6;opacity:0.7}100%{r:28;opacity:0}}
+@keyframes fdot{0%,100%{opacity:0.3;transform:translateY(0)}50%{opacity:0.7;transform:translateY(-10px)}}
+@keyframes riseUp{0%{transform:translateY(0);opacity:0.5}100%{transform:translateY(-100vh);opacity:0}}
+</style>
+<div style="position:fixed;inset:0;pointer-events:none;z-index:88890;overflow:hidden;
+  ">
+
+  <!-- SVG with paths, moving dots, ping rings, float dots -->
+  <svg style="position:absolute;inset:0;width:100%;height:100%;" xmlns="http://www.w3.org/2000/svg">
+
+    <!-- Flight corridors -->
+    <path d="M-100,150 Q200,50 500,200 Q800,350 1100,180 T1700,220"
+      fill="none" stroke="#FF6B00" stroke-width="1.3" opacity="0.16"
+      style="stroke-dasharray:1400;stroke-dashoffset:1400;animation:dp1 9s linear infinite;"/>
+    <path d="M-100,420 Q300,300 600,400 Q900,500 1200,320 T1700,370"
+      fill="none" stroke="#FF6B00" stroke-width="1.0" opacity="0.11"
+      style="stroke-dasharray:1400;stroke-dashoffset:1400;animation:dp2 13s linear infinite 1s;"/>
+    <path d="M180,-50 Q380,180 340,380 Q300,580 580,680 T860,850"
+      fill="none" stroke="#FF6B00" stroke-width="0.8" opacity="0.09"
+      style="stroke-dasharray:1000;stroke-dashoffset:1000;animation:dp3 16s linear infinite 2s;"/>
+    <path d="M1700,80 Q1300,190 1000,140 Q700,90 400,240 T-100,290"
+      fill="none" stroke="#046A38" stroke-width="1.1" opacity="0.12"
+      style="stroke-dasharray:1400;stroke-dashoffset:1400;animation:dp4 20s linear infinite reverse;"/>
+    <path d="M0,720 Q380,520 680,620 Q980,720 1280,520 T1700,570"
+      fill="none" stroke="#FF6B00" stroke-width="0.7" opacity="0.08"
+      style="stroke-dasharray:1400;stroke-dashoffset:1400;animation:dp1 24s linear infinite 3s;"/>
+    <path d="M480,-50 Q580,220 780,320 Q980,420 1080,620 T1180,850"
+      fill="none" stroke="#046A38" stroke-width="0.6" opacity="0.07"
+      style="stroke-dasharray:1000;stroke-dashoffset:1000;animation:dp3 21s linear infinite reverse 1s;"/>
+
+    <!-- Moving drone dots along paths -->
+    <circle r="5" fill="#FF6B00" opacity="0.8"
+      style="offset-path:path('M-100,150 Q200,50 500,200 Q800,350 1100,180 T1700,220');
+      offset-distance:0%;animation:mdot 9s linear infinite;
+      filter:drop-shadow(0 0 6px rgba(255,107,0,0.8));"/>
+    <circle r="4" fill="#FF6B00" opacity="0.7"
+      style="offset-path:path('M-100,420 Q300,300 600,400 Q900,500 1200,320 T1700,370');
+      offset-distance:0%;animation:mdot 13s linear infinite 2s;
+      filter:drop-shadow(0 0 5px rgba(255,107,0,0.7));"/>
+    <circle r="4" fill="#046A38" opacity="0.7"
+      style="offset-path:path('M1700,80 Q1300,190 1000,140 Q700,90 400,240 T-100,290');
+      offset-distance:0%;animation:mdot 20s linear infinite 4s;
+      filter:drop-shadow(0 0 5px rgba(4,106,56,0.7));"/>
+    <circle r="3.5" fill="#FF6B00" opacity="0.6"
+      style="offset-path:path('M0,720 Q380,520 680,620 Q980,720 1280,520 T1700,570');
+      offset-distance:0%;animation:mdot 24s linear infinite 6s;"/>
+    <circle r="3" fill="#FF6B00" opacity="0.5"
+      style="offset-path:path('M180,-50 Q380,180 340,380 Q300,580 580,680 T860,850');
+      offset-distance:0%;animation:mdot 16s linear infinite 1s;"/>
+
+    <!-- Ping rings at waypoints -->
+    <circle cx="500" cy="200" r="6" fill="none" stroke="#FF6B00" stroke-width="1.5" style="animation:ping2 3s ease-out infinite;"/>
+    <circle cx="500" cy="200" r="6" fill="none" stroke="#FF6B00" stroke-width="1" style="animation:ping2 3s ease-out infinite 1.5s;"/>
+    <circle cx="1100" cy="180" r="6" fill="none" stroke="#FF6B00" stroke-width="1.5" style="animation:ping2 4s ease-out infinite 0.8s;"/>
+    <circle cx="800" cy="350" r="5" fill="none" stroke="#FF6B00" stroke-width="1" style="animation:ping2 3.5s ease-out infinite 2s;"/>
+    <circle cx="600" cy="400" r="5" fill="none" stroke="#046A38" stroke-width="1.5" style="animation:ping2 5s ease-out infinite 1s;"/>
+    <circle cx="1200" cy="320" r="5" fill="none" stroke="#FF6B00" stroke-width="1" style="animation:ping2 4s ease-out infinite 3s;"/>
+    <circle cx="300" cy="550" r="4" fill="none" stroke="#046A38" stroke-width="1" style="animation:ping2 5s ease-out infinite 2.5s;"/>
+
+    <!-- Floating static dots scattered -->
+    <circle cx="120" cy="100" r="2.5" fill="#FF6B00" style="animation:fdot 4s ease-in-out infinite;"/>
+    <circle cx="380" cy="70" r="2" fill="#FF6B00" style="animation:fdot 5s ease-in-out infinite 1s;"/>
+    <circle cx="720" cy="160" r="2.5" fill="#FF6B00" style="animation:fdot 3.5s ease-in-out infinite 2s;"/>
+    <circle cx="1020" cy="100" r="2" fill="#046A38" style="animation:fdot 6s ease-in-out infinite 0.5s;"/>
+    <circle cx="1280" cy="240" r="2.5" fill="#FF6B00" style="animation:fdot 4.5s ease-in-out infinite 1.5s;"/>
+    <circle cx="180" cy="440" r="2" fill="#FF6B00" style="animation:fdot 5.5s ease-in-out infinite 3s;"/>
+    <circle cx="580" cy="490" r="2.5" fill="#046A38" style="animation:fdot 4s ease-in-out infinite 2.5s;"/>
+    <circle cx="940" cy="460" r="2" fill="#FF6B00" style="animation:fdot 3.5s ease-in-out infinite 1s;"/>
+    <circle cx="1180" cy="540" r="2.5" fill="#FF6B00" style="animation:fdot 5s ease-in-out infinite 0.8s;"/>
+    <circle cx="340" cy="640" r="2" fill="#046A38" style="animation:fdot 4.5s ease-in-out infinite 2s;"/>
+    <circle cx="780" cy="690" r="2.5" fill="#FF6B00" style="animation:fdot 6s ease-in-out infinite 1.2s;"/>
+    <circle cx="1380" cy="640" r="2" fill="#FF6B00" style="animation:fdot 3.8s ease-in-out infinite 3.5s;"/>
+    <circle cx="60" cy="310" r="2" fill="#FF6B00" style="animation:fdot 4.2s ease-in-out infinite 2.8s;"/>
+    <circle cx="1450" cy="420" r="2.5" fill="#046A38" style="animation:fdot 5.2s ease-in-out infinite 1.8s;"/>
+    <circle cx="850" cy="580" r="2" fill="#FF6B00" style="animation:fdot 3.9s ease-in-out infinite 4s;"/>
+  </svg>
+
+  <!-- Rising particles -->
+  <div style="position:absolute;bottom:0;left:9%;width:3px;height:3px;background:#FF6B00;border-radius:50%;animation:riseUp 12s linear infinite -1s;"></div>
+  <div style="position:absolute;bottom:0;left:23%;width:2px;height:2px;background:#aaa;border-radius:50%;animation:riseUp 15s linear infinite -4s;"></div>
+  <div style="position:absolute;bottom:0;left:38%;width:3px;height:3px;background:#FF6B00;border-radius:50%;animation:riseUp 18s linear infinite -2s;"></div>
+  <div style="position:absolute;bottom:0;left:54%;width:2px;height:2px;background:#aaa;border-radius:50%;animation:riseUp 13s linear infinite -7s;"></div>
+  <div style="position:absolute;bottom:0;left:69%;width:3px;height:3px;background:#FF6B00;border-radius:50%;animation:riseUp 16s linear infinite -3s;"></div>
+  <div style="position:absolute;bottom:0;left:84%;width:2px;height:2px;background:#aaa;border-radius:50%;animation:riseUp 20s linear infinite -5s;"></div>
+  <div style="position:absolute;bottom:0;left:15%;width:2px;height:2px;background:#FF6B00;border-radius:50%;animation:riseUp 14s linear infinite -9s;"></div>
+  <div style="position:absolute;bottom:0;left:75%;width:3px;height:3px;background:#046A38;border-radius:50%;animation:riseUp 17s linear infinite -6s;"></div>
+  <div style="position:absolute;bottom:0;left:46%;width:2px;height:2px;background:#FF6B00;border-radius:50%;animation:riseUp 11s linear infinite -3.5s;"></div>
+
+  <!-- Radar widget -->
+  <div style="position:fixed;top:28px;right:28px;width:88px;height:88px;border:1px solid rgba(255,107,0,0.25);border-radius:50%;display:flex;align-items:center;justify-content:center;overflow:hidden;">
+    <div class="radar-sweep-anim" style="position:absolute;inset:0;border-radius:50%;"></div>
+    <span style="font-family:'JetBrains Mono',monospace;font-size:8px;color:rgba(255,107,0,0.55);letter-spacing:2px;position:relative;z-index:1;margin-top:40px;">RADAR</span>
+  </div>
+</div>
+
+<!-- Main landing content -->
+<div style="position:relative;z-index:88895;">
+
+  <!-- HERO -->
+  <section style="position:relative;min-height:100vh;display:flex;align-items:center;padding:0 5vw;background:transparent;">
+
+    <!-- Live canvas animation layer -->
+    <canvas id="hero-canvas" style="position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:88891;opacity:0.9;"></canvas>
+
+    <div style="max-width:1280px;margin:0 auto;width:100%;display:grid;grid-template-columns:1fr 1fr;gap:3rem;align-items:center;position:relative;z-index:2;">
+
+      <!-- Left -->
+      <div style="display:flex;flex-direction:column;gap:2rem;">
+        <div style="display:inline-flex;align-items:center;gap:12px;background:white;padding:8px 18px;border-radius:999px;border:1px solid #ffe0cc;box-shadow:0 2px 8px rgba(0,0,0,0.04);width:fit-content;">
+          <span class="status-blink2" style="width:10px;height:10px;background:#22c55e;border-radius:50%;display:block;"></span>
+          <span style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.15em;text-transform:uppercase;">LIVE DB CONNECTED</span>
+        </div>
+        <div>
+          <h1 style="font-family:'Bebas Neue',sans-serif;font-size:clamp(72px,9vw,130px);line-height:0.85;letter-spacing:-0.02em;margin:0;">
+            INDIA <span style="color:#FF6B00;">UTM</span><br>COMMAND
+          </h1>
+          <p style="font-family:'Noto Sans Devanagari',sans-serif;font-size:1.3rem;color:#aaa;margin:10px 0 0;">भारत UTM</p>
+        </div>
+        <div>
+          <p style="font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.4em;text-transform:uppercase;color:#999;margin:0 0 10px;">DRONE SIMULATION ANALYTICS</p>
+          <div class="tricolor-bar2"></div>
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:12px;padding-top:8px;">
+          <div style="background:white;padding:10px 20px;border:1px solid #ffe0cc;border-radius:999px;box-shadow:0 2px 8px rgba(0,0,0,0.04);display:flex;align-items:center;gap:8px;transition:transform 0.15s;">
+            <span class="material-symbols-outlined" style="color:#FF6B00;font-size:18px;">database</span>
+            <span style="font-family:'Space Grotesk',sans-serif;font-size:13px;font-weight:500;">Real PostgreSQL &amp; Excel Data</span>
+          </div>
+          <div style="background:white;padding:10px 20px;border:1px solid #ffe0cc;border-radius:999px;box-shadow:0 2px 8px rgba(0,0,0,0.04);display:flex;align-items:center;gap:8px;">
+            <span class="material-symbols-outlined" style="color:#FF6B00;font-size:18px;">bolt</span>
+            <span style="font-family:'Space Grotesk',sans-serif;font-size:13px;font-weight:500;">8 Analytical Modules</span>
+          </div>
+          <div style="background:white;padding:10px 20px;border:1px solid #ffe0cc;border-radius:999px;box-shadow:0 2px 8px rgba(0,0,0,0.04);display:flex;align-items:center;gap:8px;">
+            <span class="material-symbols-outlined" style="color:#FF6B00;font-size:18px;">shield</span>
+            <span style="font-family:'Space Grotesk',sans-serif;font-size:13px;font-weight:500;">DGCA Compliant Framework</span>
+          </div>
+        </div>
+
+        <!-- Tech specs row -->
+        <div style="display:flex;flex-direction:column;gap:10px;padding-top:1rem;border-top:1px solid rgba(200,185,165,0.3);">
+          <div style="display:flex;align-items:center;gap:10px;">
+            <span class="material-symbols-outlined" style="color:#FF6B00;font-size:16px;">flight</span>
+            <span style="font-family:'Space Grotesk',sans-serif;font-size:13px;color:#555;">Simulates up to <strong>10,000 drones flying simultaneously</strong> over IIT Bombay</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;">
+            <span class="material-symbols-outlined" style="color:#FF6B00;font-size:16px;">speed</span>
+            <span style="font-family:'Space Grotesk',sans-serif;font-size:13px;color:#555;">Detects and resolves <strong>mid-air conflicts</strong> before they happen</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;">
+            <span class="material-symbols-outlined" style="color:#FF6B00;font-size:16px;">verified</span>
+            <span style="font-family:'Space Grotesk',sans-serif;font-size:13px;color:#555;">Built for India's <strong>future urban drone delivery &amp; logistics</strong> ecosystem</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;">
+            <span class="material-symbols-outlined" style="color:#FF6B00;font-size:16px;">location_city</span>
+            <span style="font-family:'Space Grotesk',sans-serif;font-size:13px;color:#555;">Developed by <strong>IIT Bombay Aerospace</strong> for next-gen air traffic research</span>
+          </div>
+        </div>
+
+        <!-- Version tag -->
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div style="width:6px;height:6px;background:#FF6B00;border-radius:50%;animation:blink2 2s infinite;"></div>
+          <span style="font-family:'JetBrains Mono',monospace;font-size:9px;color:#aaa;letter-spacing:0.15em;text-transform:uppercase;">UTM Platform v2.4 · IIT Bombay Aerospace · 2026</span>
+        </div>
+
+      </div>
+
+      <!-- Right: map + drone -->
+      <div style="position:relative;height:520px;display:flex;align-items:center;justify-content:center;">
+        <canvas id="india-canvas-landing" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:520px;height:auto;pointer-events:none;z-index:0;"></canvas>
+        <!-- IIT Bombay marker — Mumbai west coast correct position -->
+        <div style="position:absolute;left:23%;top:64%;z-index:3;transform:translate(-50%,-50%);">
+          <svg width="10" height="10" style="overflow:visible;pointer-events:none;display:block;">
+            <circle cx="5" cy="5" r="4" fill="#FF6B00" opacity="0.9"/>
+            <circle cx="5" cy="5" r="4" fill="none" stroke="#FF6B00" stroke-width="1.5" class="iit-pulse"/>
+          </svg>
+          <!-- Label to the LEFT of the dot -->
+          <div style="position:absolute;top:50%;right:16px;transform:translateY(-50%);
+            background:rgba(250,247,242,0.95);color:#333;
+            font-family:'JetBrains Mono',monospace;font-size:8px;font-weight:700;
+            letter-spacing:1.5px;text-transform:uppercase;
+            padding:3px 8px;border-radius:3px;white-space:nowrap;
+            border:1px solid rgba(255,107,0,0.4);
+            box-shadow:0 1px 6px rgba(0,0,0,0.08);">
+            IIT BOMBAY <span style="color:#FF6B00;">●</span>
+          </div>
+        </div>
+        <!-- Drone centred on India map -->
+        <div class="phantom-drone-container" style="position:absolute;left:40%;top:48%;z-index:2;transform:translate(-50%,-50%);">
+          <svg viewBox="0 0 200 160" width="280" xmlns="http://www.w3.org/2000/svg">
+            <path d="M100,75 L40,40 L45,35 L100,70 Z" fill="#2d2d3a"/>
+            <path d="M45,40 L60,48" stroke="#FF6B00" stroke-width="2"/>
+            <path d="M100,75 L160,40 L155,35 L100,70 Z" fill="#2d2d3a"/>
+            <path d="M155,40 L140,48" stroke="#FF6B00" stroke-width="2"/>
+            <path d="M100,85 L30,110 L35,115 L100,90 Z" fill="#2d2d3a"/>
+            <path d="M35,110 L50,105" stroke="#FF6B00" stroke-width="2"/>
+            <path d="M100,85 L170,110 L165,115 L100,90 Z" fill="#2d2d3a"/>
+            <path d="M165,110 L150,105" stroke="#FF6B00" stroke-width="2"/>
+            <ellipse cx="100" cy="80" rx="35" ry="25" fill="#1c1c2e"/>
+            <ellipse cx="100" cy="75" rx="30" ry="20" fill="#2d2d3a"/>
+            <circle cx="85" cy="70" r="2" fill="#4ade80" class="status-blink2"/>
+            <circle cx="115" cy="70" r="2" fill="#4ade80" class="status-blink2"/>
+            <path d="M85,100 L115,100 L110,118 L90,118 Z" fill="#2d2d3a"/>
+            <circle cx="100" cy="112" r="7" fill="#1c1c2e"/>
+            <path d="M70,90 Q70,138 85,138" fill="none" stroke="#3d3d4e" stroke-width="3" stroke-linecap="round"/>
+            <path d="M130,90 Q130,138 115,138" fill="none" stroke="#3d3d4e" stroke-width="3" stroke-linecap="round"/>
+            <g transform="translate(40,40)"><circle cx="0" cy="0" r="4" fill="#1c1c2e"/><ellipse class="rotor-blade2" cx="0" cy="0" rx="22" ry="3" fill="rgba(0,0,0,0.12)" stroke="rgba(255,107,0,0.3)" stroke-width="0.5"/></g>
+            <g transform="translate(160,40)"><circle cx="0" cy="0" r="4" fill="#1c1c2e"/><ellipse class="rotor-blade2" cx="0" cy="0" rx="22" ry="3" fill="rgba(0,0,0,0.12)" stroke="rgba(255,107,0,0.3)" stroke-width="0.5"/></g>
+            <g transform="translate(30,110)"><circle cx="0" cy="0" r="4" fill="#1c1c2e"/><ellipse class="rotor-blade2" cx="0" cy="0" rx="22" ry="3" fill="rgba(0,0,0,0.12)" stroke="rgba(255,107,0,0.3)" stroke-width="0.5"/></g>
+            <g transform="translate(170,110)"><circle cx="0" cy="0" r="4" fill="#1c1c2e"/><ellipse class="rotor-blade2" cx="0" cy="0" rx="22" ry="3" fill="rgba(0,0,0,0.12)" stroke="rgba(255,107,0,0.3)" stroke-width="0.5"/></g>
+          </svg>
+        </div>
+      </div>
+    </div>
+    <!-- Scroll hint -->
+    <div style="position:absolute;bottom:40px;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:8px;opacity:0.4;animation:bounce 2s infinite;">
+      <span style="font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:0.2em;text-transform:uppercase;">SCROLL</span>
+      <span class="material-symbols-outlined">expand_more</span>
+    </div>
+  </section>
+
+  <!-- ABOUT -->
+  <section class="reveal2" style="padding:7rem 5vw;background:transparent;">
+    <div style="max-width:1280px;margin:0 auto;">
+      <h2 style="font-family:'JetBrains Mono',monospace;font-size:1.2rem;font-weight:700;display:flex;align-items:center;gap:16px;margin-bottom:3.5rem;">
+        <span style="color:#FF6B00;">▌</span> ABOUT THIS PLATFORM
+      </h2>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:5rem;">
+        <div style="font-family:'Space Grotesk',sans-serif;font-size:17px;color:#555;line-height:1.8;">
+          <p style="margin-bottom:1.5rem;">India UTM Command is a research-grade analytics dashboard developed at IIT Bombay for simulating and analyzing Unmanned Traffic Management scenarios across Indian airspace.</p>
+          <p>Built on real PostgreSQL simulation data, it provides 8 specialized analytical modules covering airspace intelligence, safety conflicts, fleet dynamics, temporal patterns, and ML-based risk prediction.</p>
+        </div>
+        <div style="background:rgba(255,255,255,0.7);border:1px solid #ffe8d4;padding:2rem;border-radius:16px;box-shadow:0 2px 12px rgba(0,0,0,0.04);backdrop-filter:blur(4px);">
+          <h4 style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.2em;text-transform:uppercase;color:#aaa;margin-bottom:1.2rem;">CORE SYSTEMS</h4>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+            <div style="display:flex;align-items:center;gap:8px;"><span style="width:6px;height:6px;background:#FF6B00;border-radius:50%;flex-shrink:0;"></span><span style="font-size:13px;font-family:'Space Grotesk',sans-serif;">Trajectory Engine</span></div>
+            <div style="display:flex;align-items:center;gap:8px;"><span style="width:6px;height:6px;background:#FF6B00;border-radius:50%;flex-shrink:0;"></span><span style="font-size:13px;font-family:'Space Grotesk',sans-serif;">Dynamic Geofencing</span></div>
+            <div style="display:flex;align-items:center;gap:8px;"><span style="width:6px;height:6px;background:#FF6B00;border-radius:50%;flex-shrink:0;"></span><span style="font-size:13px;font-family:'Space Grotesk',sans-serif;">Risk Modeling</span></div>
+            <div style="display:flex;align-items:center;gap:8px;"><span style="width:6px;height:6px;background:#FF6B00;border-radius:50%;flex-shrink:0;"></span><span style="font-size:13px;font-family:'Space Grotesk',sans-serif;">Conflict Resolution</span></div>
+            <div style="display:flex;align-items:center;gap:8px;"><span style="width:6px;height:6px;background:#FF6B00;border-radius:50%;flex-shrink:0;"></span><span style="font-size:13px;font-family:'Space Grotesk',sans-serif;">Weather Overlay</span></div>
+            <div style="display:flex;align-items:center;gap:8px;"><span style="width:6px;height:6px;background:#FF6B00;border-radius:50%;flex-shrink:0;"></span><span style="font-size:13px;font-family:'Space Grotesk',sans-serif;">Mission Planner</span></div>
+            <div style="display:flex;align-items:center;gap:8px;"><span style="width:6px;height:6px;background:#FF6B00;border-radius:50%;flex-shrink:0;"></span><span style="font-size:13px;font-family:'Space Grotesk',sans-serif;">Visual Analytics</span></div>
+            <div style="display:flex;align-items:center;gap:8px;"><span style="width:6px;height:6px;background:#FF6B00;border-radius:50%;flex-shrink:0;"></span><span style="font-size:13px;font-family:'Space Grotesk',sans-serif;">Edge Telemetry</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- MODULES -->
+  <section style="padding:7rem 5vw;background:transparent;">
+    <div style="max-width:1280px;margin:0 auto;">
+      <h2 class="reveal2" style="font-family:'JetBrains Mono',monospace;font-size:1.2rem;font-weight:700;display:flex;align-items:center;gap:16px;margin-bottom:3.5rem;">
+        <span style="color:#FF6B00;">▌</span> PLATFORM MODULES
+      </h2>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:20px;">
+        <div class="module-card2 reveal2" style="background:rgba(255,255,255,0.75);padding:28px;border-radius:12px;border:1px solid #ffe8d4;box-shadow:0 2px 8px rgba(0,0,0,0.03);position:relative;overflow:hidden;transition:transform 0.2s,box-shadow 0.2s;transition-delay:60ms" onmouseover="this.style.transform='translateY(-4px)';this.style.boxShadow='0 12px 32px rgba(0,0,0,0.1)'" onmouseout="this.style.transform='';this.style.boxShadow=''"><div class="scan-beam2"></div><span class="material-symbols-outlined" style="color:#FF6B00;font-size:28px;margin-bottom:16px;display:block;">navigation</span><h4 style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:15px;margin:0 0 6px;">Airspace</h4><p style="font-size:12px;color:#999;margin:0 0 14px;">Layer-by-layer airspace mapping.</p><div style="display:flex;align-items:center;gap:6px;"><span class="status-blink2" style="width:7px;height:7px;background:#22c55e;border-radius:50%;display:block;"></span><span style="font-family:'JetBrains Mono',monospace;font-size:9px;color:#046A38;font-weight:700;text-transform:uppercase;">Active</span></div></div>
+        <div class="module-card2 reveal2" style="background:rgba(255,255,255,0.75);padding:28px;border-radius:12px;border:1px solid #ffe8d4;box-shadow:0 2px 8px rgba(0,0,0,0.03);position:relative;overflow:hidden;transition:transform 0.2s,box-shadow 0.2s;transition-delay:120ms" onmouseover="this.style.transform='translateY(-4px)';this.style.boxShadow='0 12px 32px rgba(0,0,0,0.1)'" onmouseout="this.style.transform='';this.style.boxShadow=''"><div class="scan-beam2"></div><span class="material-symbols-outlined" style="color:#FF6B00;font-size:28px;margin-bottom:16px;display:block;">shield</span><h4 style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:15px;margin:0 0 6px;">Safety</h4><p style="font-size:12px;color:#999;margin:0 0 14px;">Collision detection analytics.</p><div style="display:flex;align-items:center;gap:6px;"><span class="status-blink2" style="width:7px;height:7px;background:#22c55e;border-radius:50%;display:block;"></span><span style="font-family:'JetBrains Mono',monospace;font-size:9px;color:#046A38;font-weight:700;text-transform:uppercase;">Active</span></div></div>
+        <div class="module-card2 reveal2" style="background:rgba(255,255,255,0.75);padding:28px;border-radius:12px;border:1px solid #ffe8d4;box-shadow:0 2px 8px rgba(0,0,0,0.03);position:relative;overflow:hidden;transition:transform 0.2s,box-shadow 0.2s;transition-delay:180ms" onmouseover="this.style.transform='translateY(-4px)';this.style.boxShadow='0 12px 32px rgba(0,0,0,0.1)'" onmouseout="this.style.transform='';this.style.boxShadow=''"><div class="scan-beam2"></div><span class="material-symbols-outlined" style="color:#FF6B00;font-size:28px;margin-bottom:16px;display:block;">flight</span><h4 style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:15px;margin:0 0 6px;">Fleet</h4><p style="font-size:12px;color:#999;margin:0 0 14px;">Drone composition analysis.</p><div style="display:flex;align-items:center;gap:6px;"><span class="status-blink2" style="width:7px;height:7px;background:#22c55e;border-radius:50%;display:block;"></span><span style="font-family:'JetBrains Mono',monospace;font-size:9px;color:#046A38;font-weight:700;text-transform:uppercase;">Active</span></div></div>
+        <div class="module-card2 reveal2" style="background:rgba(255,255,255,0.75);padding:28px;border-radius:12px;border:1px solid #ffe8d4;box-shadow:0 2px 8px rgba(0,0,0,0.03);position:relative;overflow:hidden;transition:transform 0.2s,box-shadow 0.2s;transition-delay:240ms" onmouseover="this.style.transform='translateY(-4px)';this.style.boxShadow='0 12px 32px rgba(0,0,0,0.1)'" onmouseout="this.style.transform='';this.style.boxShadow=''"><div class="scan-beam2"></div><span class="material-symbols-outlined" style="color:#FF6B00;font-size:28px;margin-bottom:16px;display:block;">schedule</span><h4 style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:15px;margin:0 0 6px;">Temporal</h4><p style="font-size:12px;color:#999;margin:0 0 14px;">Time-series flight patterns.</p><div style="display:flex;align-items:center;gap:6px;"><span class="status-blink2" style="width:7px;height:7px;background:#22c55e;border-radius:50%;display:block;"></span><span style="font-family:'JetBrains Mono',monospace;font-size:9px;color:#046A38;font-weight:700;text-transform:uppercase;">Active</span></div></div>
+        <div class="module-card2 reveal2" style="background:rgba(255,255,255,0.75);padding:28px;border-radius:12px;border:1px solid #ffe8d4;box-shadow:0 2px 8px rgba(0,0,0,0.03);position:relative;overflow:hidden;transition:transform 0.2s,box-shadow 0.2s;transition-delay:300ms" onmouseover="this.style.transform='translateY(-4px)';this.style.boxShadow='0 12px 32px rgba(0,0,0,0.1)'" onmouseout="this.style.transform='';this.style.boxShadow=''"><div class="scan-beam2"></div><span class="material-symbols-outlined" style="color:#FF6B00;font-size:28px;margin-bottom:16px;display:block;">trending_up</span><h4 style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:15px;margin:0 0 6px;">Predictive</h4><p style="font-size:12px;color:#999;margin:0 0 14px;">ML risk scoring per corridor.</p><div style="display:flex;align-items:center;gap:6px;"><span class="status-blink2" style="width:7px;height:7px;background:#22c55e;border-radius:50%;display:block;"></span><span style="font-family:'JetBrains Mono',monospace;font-size:9px;color:#046A38;font-weight:700;text-transform:uppercase;">Active</span></div></div>
+        <div class="module-card2 reveal2" style="background:rgba(255,255,255,0.75);padding:28px;border-radius:12px;border:1px solid #ffe8d4;box-shadow:0 2px 8px rgba(0,0,0,0.03);position:relative;overflow:hidden;transition:transform 0.2s,box-shadow 0.2s;transition-delay:360ms" onmouseover="this.style.transform='translateY(-4px)';this.style.boxShadow='0 12px 32px rgba(0,0,0,0.1)'" onmouseout="this.style.transform='';this.style.boxShadow=''"><div class="scan-beam2"></div><span class="material-symbols-outlined" style="color:#FF6B00;font-size:28px;margin-bottom:16px;display:block;">memory</span><h4 style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:15px;margin:0 0 6px;">Algorithm</h4><p style="font-size:12px;color:#999;margin:0 0 14px;">Pathfinding diagnostics.</p><div style="display:flex;align-items:center;gap:6px;"><span class="status-blink2" style="width:7px;height:7px;background:#22c55e;border-radius:50%;display:block;"></span><span style="font-family:'JetBrains Mono',monospace;font-size:9px;color:#046A38;font-weight:700;text-transform:uppercase;">Active</span></div></div>
+        <div class="module-card2 reveal2" style="background:rgba(255,255,255,0.75);padding:28px;border-radius:12px;border:1px solid #ffe8d4;box-shadow:0 2px 8px rgba(0,0,0,0.03);position:relative;overflow:hidden;transition:transform 0.2s,box-shadow 0.2s;transition-delay:420ms" onmouseover="this.style.transform='translateY(-4px)';this.style.boxShadow='0 12px 32px rgba(0,0,0,0.1)'" onmouseout="this.style.transform='';this.style.boxShadow=''"><div class="scan-beam2"></div><span class="material-symbols-outlined" style="color:#FF6B00;font-size:28px;margin-bottom:16px;display:block;">satellite_alt</span><h4 style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:15px;margin:0 0 6px;">Intel</h4><p style="font-size:12px;color:#999;margin:0 0 14px;">Multi-trial intelligence.</p><div style="display:flex;align-items:center;gap:6px;"><span class="status-blink2" style="width:7px;height:7px;background:#22c55e;border-radius:50%;display:block;"></span><span style="font-family:'JetBrains Mono',monospace;font-size:9px;color:#046A38;font-weight:700;text-transform:uppercase;">Active</span></div></div>
+        <div class="module-card2 reveal2" style="background:rgba(255,255,255,0.75);padding:28px;border-radius:12px;border:1px solid #ffe8d4;box-shadow:0 2px 8px rgba(0,0,0,0.03);position:relative;overflow:hidden;transition:transform 0.2s,box-shadow 0.2s;transition-delay:480ms" onmouseover="this.style.transform='translateY(-4px)';this.style.boxShadow='0 12px 32px rgba(0,0,0,0.1)'" onmouseout="this.style.transform='';this.style.boxShadow=''"><div class="scan-beam2"></div><span class="material-symbols-outlined" style="color:#FF6B00;font-size:28px;margin-bottom:16px;display:block;">overview</span><h4 style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:15px;margin:0 0 6px;">Overview</h4><p style="font-size:12px;color:#999;margin:0 0 14px;">Live airspace digital twin.</p><div style="display:flex;align-items:center;gap:6px;"><span class="status-blink2" style="width:7px;height:7px;background:#22c55e;border-radius:50%;display:block;"></span><span style="font-family:'JetBrains Mono',monospace;font-size:9px;color:#046A38;font-weight:700;text-transform:uppercase;">Active</span></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="reveal2" style="padding:10rem 5vw;text-align:center;background:transparent;">
+    <div style="max-width:600px;margin:0 auto;">
+      <h2 style="font-family:'JetBrains Mono',monospace;font-size:1.2rem;font-weight:700;display:flex;align-items:center;justify-content:center;gap:16px;margin-bottom:1.5rem;">
+        <span style="color:#FF6B00;">▌</span> BEGIN SESSION
+      </h2>
+      <p style="font-family:'Space Grotesk',sans-serif;font-size:17px;color:#888;margin-bottom:2.5rem;">Connect your PostgreSQL database or upload an Excel simulation export to begin.</p>
+      <button id="landing-launch-btn"
+        style="background:#FF6B00;color:white;padding:18px 52px;border-radius:8px;font-family:'Space Grotesk',sans-serif;font-size:17px;font-weight:700;letter-spacing:0.05em;border:none;cursor:pointer;display:inline-flex;align-items:center;gap:12px;box-shadow:0 8px 30px rgba(255,107,0,0.3);transition:transform 0.15s,box-shadow 0.15s;"
+        onmouseover="this.style.transform='scale(1.05)';this.style.boxShadow='0 12px 40px rgba(255,107,0,0.4)'"
+        onmouseout="this.style.transform='scale(1)';this.style.boxShadow='0 8px 30px rgba(255,107,0,0.3)'"
+        onmousedown="this.style.transform='scale(0.97)'"
+        onmouseup="this.style.transform='scale(1.05)'">
+        <span class="material-symbols-outlined">play_arrow</span>
+        LAUNCH DASHBOARD
+      </button>
+      <p style="font-family:'JetBrains Mono',monospace;font-size:9px;color:#ccc;letter-spacing:0.15em;text-transform:uppercase;margin-top:1.5rem;">SUPPORTS POSTGRESQL · EXCEL (.XLSX)</p>
+    </div>
+  </section>
+
+  <footer style="padding:2.5rem;border-top:1px solid #f0ebe3;text-align:center;background:transparent;">
+    <p style="font-family:'JetBrains Mono',monospace;font-size:9px;color:#ccc;letter-spacing:0.3em;text-transform:uppercase;">© 2024 IIT BOMBAY AEROSPACE · INDIA UTM COMMAND · RESEARCH BUILD</p>
+  </footer>
+
+
+<script>
+// ── Hero canvas animation ──
+(function() {
+  const canvas = document.getElementById('hero-canvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+
+  function resize() {
+    canvas.width  = canvas.offsetWidth;
+    canvas.height = canvas.offsetHeight;
+  }
+  resize();
+  window.addEventListener('resize', resize);
+
+  const ORANGE = 'rgba(255,107,0,';
+  const GREEN  = 'rgba(4,106,56,';
+
+  // Flight paths
+  const paths = [
+    { pts:[{x:0,y:0.25},{x:0.25,y:0.12},{x:0.5,y:0.28},{x:0.75,y:0.18},{x:1,y:0.22}], col:ORANGE, w:1.0, op:0.07, spd:0.0002 },
+    { pts:[{x:0,y:0.55},{x:0.3,y:0.4},{x:0.6,y:0.52},{x:0.85,y:0.38},{x:1,y:0.45}],  col:ORANGE, w:0.8, op:0.05, spd:0.00015 },
+    { pts:[{x:0.15,y:0},{x:0.3,y:0.3},{x:0.35,y:0.55},{x:0.55,y:0.7},{x:0.7,y:1}],   col:ORANGE, w:0.7, op:0.04, spd:0.00012 },
+    { pts:[{x:1,y:0.12},{x:0.75,y:0.22},{x:0.5,y:0.18},{x:0.25,y:0.32},{x:0,y:0.38}],col:GREEN,  w:0.8, op:0.05, spd:0.0001 },
+    { pts:[{x:0,y:0.82},{x:0.35,y:0.65},{x:0.65,y:0.75},{x:0.9,y:0.62},{x:1,y:0.68}],col:ORANGE, w:0.6, op:0.04, spd:0.00018 },
+    { pts:[{x:0.6,y:0},{x:0.7,y:0.28},{x:0.8,y:0.42},{x:0.85,y:0.65},{x:0.9,y:1}],   col:GREEN,  w:0.5, op:0.04, spd:0.00013 },
+  ];
+
+  // Progress tracker per path
+  const progress = paths.map(() => Math.random());
+
+  // Drone dots
+  const dots = paths.map((p, i) => ({
+    pathIdx: i,
+    t: Math.random(),
+    size: 3 + Math.random() * 2,
+    spd: p.spd * (0.4 + Math.random() * 0.3),
+    glow: p.col === ORANGE
+  }));
+
+  // Ping rings
+  const pings = [
+    {x:0.5,y:0.28,t:0,interval:3,col:ORANGE},
+    {x:0.75,y:0.18,t:1,interval:4,col:ORANGE},
+    {x:0.3,y:0.4,t:2,interval:5,col:GREEN},
+    {x:0.85,y:0.38,t:1.5,interval:3.5,col:ORANGE},
+    {x:0.35,y:0.55,t:0.5,interval:6,col:GREEN},
+    {x:0.65,y:0.75,t:2.5,interval:4,col:ORANGE},
+  ];
+
+  // Floating dots
+  const floaters = Array.from({length:20}, () => ({
+    x: Math.random(), y: Math.random(),
+    r: 1 + Math.random() * 1.5,
+    dy: 0, phase: Math.random() * Math.PI * 2,
+    spd: 0.08 + Math.random() * 0.12,
+    col: Math.random() > 0.3 ? ORANGE : GREEN,
+    op: 0.08 + Math.random() * 0.12
+  }));
+
+  // Rising particles
+  const particles = Array.from({length:12}, () => ({
+    x: Math.random(),
+    y: 1 + Math.random(),
+    r: 1 + Math.random(),
+    spd: 0.00008 + Math.random() * 0.0001,
+    col: Math.random() > 0.3 ? ORANGE : 'rgba(150,150,150,',
+    op: 0.08 + Math.random() * 0.1
+  }));
+
+  // Catmull-Rom point on path
+  function getPoint(pts, t, W, H) {
+    const n = pts.length - 1;
+    const i = Math.min(Math.floor(t * n), n - 1);
+    const f = t * n - i;
+    const p0 = pts[Math.max(i-1,0)];
+    const p1 = pts[i];
+    const p2 = pts[Math.min(i+1,n)];
+    const p3 = pts[Math.min(i+2,n)];
+    const x = 0.5*((2*p1.x)+(-p0.x+p2.x)*f+(2*p0.x-5*p1.x+4*p2.x-p3.x)*f*f+(-p0.x+3*p1.x-3*p2.x+p3.x)*f*f*f);
+    const y = 0.5*((2*p1.y)+(-p0.y+p2.y)*f+(2*p0.y-5*p1.y+4*p2.y-p3.y)*f*f+(-p0.y+3*p1.y-3*p2.y+p3.y)*f*f*f);
+    return {x: x*W, y: y*H};
+  }
+
+  let last = performance.now();
+
+  function draw(now) {
+    const dt = now - last; last = now;
+    const W = canvas.width, H = canvas.height;
+    ctx.clearRect(0, 0, W, H);
+
+    // Draw flight paths with progress (drawing animation)
+    paths.forEach((p, i) => {
+      progress[i] = (progress[i] + p.spd * dt) % 1.05;
+      const tEnd = Math.min(progress[i], 1);
+      if (tEnd <= 0) return;
+
+      ctx.beginPath();
+      for (let t = 0; t <= tEnd; t += 0.01) {
+        const pt = getPoint(p.pts, t, W, H);
+        t === 0 ? ctx.moveTo(pt.x, pt.y) : ctx.lineTo(pt.x, pt.y);
+      }
+      ctx.strokeStyle = p.col + p.op + ')';
+      ctx.lineWidth = p.w;
+      ctx.stroke();
+
+      // Fade trail: redraw last 20% lighter
+      if (tEnd > 0.15) {
+        ctx.beginPath();
+        for (let t = Math.max(0, tEnd - 0.15); t <= tEnd; t += 0.01) {
+          const pt = getPoint(p.pts, t, W, H);
+          t === Math.max(0, tEnd - 0.15) ? ctx.moveTo(pt.x, pt.y) : ctx.lineTo(pt.x, pt.y);
+        }
+        ctx.strokeStyle = p.col + (p.op * 0.4) + ')';
+        ctx.lineWidth = p.w * 0.5;
+        ctx.stroke();
+      }
+    });
+
+    // Draw moving drone dots
+    dots.forEach(d => {
+      d.t = (d.t + d.spd * dt) % 1;
+      const p = paths[d.pathIdx];
+      const pt = getPoint(p.pts, d.t, W, H);
+
+      // Glow
+      if (d.glow) {
+        const g = ctx.createRadialGradient(pt.x, pt.y, 0, pt.x, pt.y, d.size * 4);
+        g.addColorStop(0, p.col + '0.2)');
+        g.addColorStop(1, p.col + '0)');
+        ctx.beginPath();
+        ctx.arc(pt.x, pt.y, d.size * 4, 0, Math.PI * 2);
+        ctx.fillStyle = g;
+        ctx.fill();
+      }
+
+      // Dot
+      ctx.beginPath();
+      ctx.arc(pt.x, pt.y, d.size, 0, Math.PI * 2);
+      ctx.fillStyle = p.col + '0.45)';
+      ctx.fill();
+
+      // Trail
+      ctx.beginPath();
+      const tBack = Math.max(0, d.t - 0.06);
+      for (let t = tBack; t <= d.t; t += 0.005) {
+        const tpt = getPoint(p.pts, t, W, H);
+        const a = (t - tBack) / (d.t - tBack);
+        ctx.beginPath();
+        ctx.arc(tpt.x, tpt.y, d.size * 0.4, 0, Math.PI * 2);
+        ctx.fillStyle = p.col + (a * 0.3) + ')';
+        ctx.fill();
+      }
+    });
+
+    // Ping rings
+    const t = now / 1000;
+    pings.forEach(pg => {
+      const phase = (t / pg.interval) % 1;
+      const phase2 = ((t / pg.interval) + 0.5) % 1;
+      [phase, phase2].forEach(ph => {
+        const r = ph * 22;
+        const op = (1 - ph) * 0.15;
+        if (op <= 0) return;
+        ctx.beginPath();
+        ctx.arc(pg.x * W, pg.y * H, r, 0, Math.PI * 2);
+        ctx.strokeStyle = pg.col + op + ')';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+      });
+
+      // Center dot
+      ctx.beginPath();
+      ctx.arc(pg.x * W, pg.y * H, 3, 0, Math.PI * 2);
+      ctx.fillStyle = pg.col + '0.6)';
+      ctx.fill();
+    });
+
+    // Floating dots
+    floaters.forEach(f => {
+      f.phase += f.spd * dt * 0.05;
+      const yOff = Math.sin(f.phase) * 8;
+      ctx.beginPath();
+      ctx.arc(f.x * W, f.y * H + yOff, f.r, 0, Math.PI * 2);
+      ctx.fillStyle = f.col + f.op + ')';
+      ctx.fill();
+    });
+
+    // Rising particles
+    particles.forEach(p => {
+      p.y -= p.spd * dt;
+      if (p.y < -0.05) { p.y = 1.05; p.x = Math.random(); }
+      ctx.beginPath();
+      ctx.arc(p.x * W, p.y * H, p.r, 0, Math.PI * 2);
+      ctx.fillStyle = p.col + p.op + ')';
+      ctx.fill();
+    });
+
+    requestAnimationFrame(draw);
+  }
+
+  requestAnimationFrame(draw);
+})();
+</script>
+</div><!-- /main landing content -->
+</div><!-- /landing-page overlay -->
+
+<!-- Landing page scripts -->
+<script>
+// Progress bar
+document.getElementById('landing-page').addEventListener('scroll', function() {
+  const el = this;
+  const h = el.scrollHeight - el.clientHeight;
+  document.getElementById('landing-progress-bar').style.width = (el.scrollTop / h * 100) + '%';
+});
+
+// Scroll reveal
+const ro2 = new IntersectionObserver(entries => {
+  entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('active'); });
+}, { threshold: 0.08, root: document.getElementById('landing-page') });
+document.querySelectorAll('.reveal2').forEach(el => ro2.observe(el));
+
+// India map — fetch as blob to bypass CORS canvas restrictions
+window.addEventListener('load', () => {
+  const canvas = document.getElementById('india-canvas-landing');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+
+  fetch('/images/india-white.jpg')
+    .then(r => r.blob())
+    .then(blob => {
+      const url = URL.createObjectURL(blob);
+      const img = new Image();
+      img.onload = () => {
+        canvas.width  = img.naturalWidth;
+        canvas.height = img.naturalHeight;
+        ctx.drawImage(img, 0, 0);
+        try {
+          const d = ctx.getImageData(0, 0, canvas.width, canvas.height);
+          const px = d.data;
+          for (let i = 0; i < px.length; i += 4) {
+            const brightness = (px[i] + px[i+1] + px[i+2]) / 3;
+            if (brightness > 90) {
+              px[i+3] = 0;
+            } else {
+              px[i]   = 255;
+              px[i+1] = 107;
+              px[i+2] = 0;
+              px[i+3] = 160;
+            }
+          }
+          ctx.putImageData(d, 0, 0);
+        } catch(e) {
+          // fallback: just show as-is with CSS filter
+          canvas.style.filter = 'sepia(1) saturate(8) hue-rotate(355deg) contrast(4) opacity(0.25)';
+          canvas.style.mixBlendMode = 'multiply';
+        }
+        URL.revokeObjectURL(url);
+      };
+      img.src = url;
+    })
+    .catch(() => {
+      // If fetch fails, try direct img with CSS filter fallback
+      const img = new Image();
+      img.src = '/images/india-white.jpg';
+      img.style.cssText = 'position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:520px;height:auto;mix-blend-mode:multiply;opacity:0.25;filter:sepia(1) saturate(8) hue-rotate(355deg) contrast(4);pointer-events:none;z-index:0;';
+      img.onload = () => {
+        canvas.parentNode.insertBefore(img, canvas);
+        canvas.style.display = 'none';
+      };
+    });
+});
+
+// Launch button
+document.getElementById('landing-launch-btn').addEventListener('click', () => {
+  const landing = document.getElementById('landing-page');
+  landing.style.transition = 'opacity 0.5s ease';
+  landing.style.opacity = '0';
+  setTimeout(() => {
+    landing.style.display = 'none';
+    // Restore dashboard body/html classes
+    document.getElementById('root-html').className = 'h-full w-full overflow-hidden';
+    document.getElementById('root-body').className = 'h-screen w-screen overflow-hidden flex font-sans bg-brand-bg';
+    // Show the dashboard login modal
+    const modal = document.getElementById('login-modal');
+    if (modal) {
+      modal.style.display = 'flex';
+      modal.style.opacity = '0';
+      modal.style.transition = 'opacity 0.4s';
+      setTimeout(() => { modal.style.opacity = '1'; }, 10);
+    }
+  }, 500);
+});
+</script>
+
+
+<!-- LOGIN MODAL -->
+<div id="login-modal" class="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm" style="display:none;">
+  <div class="w-[440px] bg-[#FAF7F2] border border-brand-border rounded-2xl shadow-2xl overflow-hidden">
+    <div class="bg-brand-accent px-6 py-5 flex items-center space-x-3">
+      <img src="https://lh3.googleusercontent.com/aida-public/AB6AXuCEyb5WrMiaxMkrIKJ5-MqZvAATp3QEqtnpRCEOD_ZbJymsm7ZHTGNP33gvj3Q2aXUTJtChs8_ClXNSAh5djEOAwiVg02IB1JCZK8HK876MvgmdwE7wPx6CyxfqKklWpxJmXCZ0NhdyMbltRF7xORKetT-PrSm6mOmHa_gxRBh5zXeChpZSZslpkCNGSiwUTwxlYJipEVn72YXwXQ1BRmTw587FKmwCpZeAKy1vkVn1vrLLCB8XUw1R6zvP0tv9vw8oibG6ILREDjk" alt="IIT" class="w-10 h-10 rounded-full bg-white/20 p-1">
+      <div><h1 class="font-display text-white text-xl tracking-widest">IIT BOMBAY</h1><p class="text-white/70 text-[10px] font-mono tracking-widest uppercase">UTM Command · utm_geo_db</p></div>
+    </div>
+    <div class="p-6">
+      <div class="flex border-b border-brand-border mb-5">
+        <button class="login-tab active-tab" data-tab="pg">PostgreSQL</button>
+        <button class="login-tab" data-tab="xl">Excel Upload</button>
+      </div>
+      <div class="login-form" id="lf-pg">
+        <div class="grid grid-cols-2 gap-3 mb-3">
+          <div><label class="block text-[9px] font-mono font-bold text-gray-400 uppercase tracking-widest mb-1">Host</label><input id="pg-host" value="localhost" class="w-full bg-white border border-brand-border rounded-lg px-3 py-2 text-xs font-mono focus:ring-1 focus:ring-brand-accent outline-none"></div>
+          <div><label class="block text-[9px] font-mono font-bold text-gray-400 uppercase tracking-widest mb-1">Port</label><input id="pg-port" value="5432" class="w-full bg-white border border-brand-border rounded-lg px-3 py-2 text-xs font-mono focus:ring-1 focus:ring-brand-accent outline-none"></div>
+        </div>
+        <div class="mb-3"><label class="block text-[9px] font-mono font-bold text-gray-400 uppercase tracking-widest mb-1">Database</label><input id="pg-db" value="utm_geo_db" class="w-full bg-white border border-brand-border rounded-lg px-3 py-2 text-xs font-mono focus:ring-1 focus:ring-brand-accent outline-none"></div>
+        <div class="grid grid-cols-2 gap-3 mb-4">
+          <div><label class="block text-[9px] font-mono font-bold text-gray-400 uppercase tracking-widest mb-1">User</label><input id="pg-user" value="postgres" class="w-full bg-white border border-brand-border rounded-lg px-3 py-2 text-xs font-mono focus:ring-1 focus:ring-brand-accent outline-none"></div>
+          <div><label class="block text-[9px] font-mono font-bold text-gray-400 uppercase tracking-widest mb-1">Password</label><input id="pg-pass" type="password" value="omkar7781" class="w-full bg-white border border-brand-border rounded-lg px-3 py-2 text-xs font-mono focus:ring-1 focus:ring-brand-accent outline-none"></div>
+        </div>
+        <button id="btn-pg" class="w-full py-3 bg-brand-accent hover:bg-orange-600 text-white font-bold text-sm tracking-widest uppercase rounded-xl transition-colors">Authorize Access →</button>
+      </div>
+      <div class="login-form hidden" id="lf-xl">
+        <div class="mb-4"><label class="block text-[9px] font-mono font-bold text-gray-400 uppercase tracking-widest mb-1">Excel File (.xlsx)</label><input id="xl-file" type="file" accept=".xlsx" class="w-full bg-white border border-brand-border rounded-lg px-3 py-2 text-xs font-mono"></div>
+        <button id="btn-xl" class="w-full py-3 bg-brand-accent hover:bg-orange-600 text-white font-bold text-sm tracking-widest uppercase rounded-xl transition-colors">Load Mission Data →</button>
+      </div>
+      <p id="login-status" class="text-[10px] font-mono mt-2 text-center text-gray-400"></p>
+      <div class="mt-4 pt-4 border-t border-brand-border flex justify-between text-[8px] font-mono text-gray-300 uppercase tracking-wider">
+        <span>utm_geo_db · localhost:5432</span><span>DGCA · IIT-B · 2026</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SIDEBAR -->
+<aside class="w-[300px] bg-brand-sidebar flex flex-col border-r border-brand-border shadow-sm z-20 shrink-0" style="height:100vh;">
+  <!-- Brand -->
+  <div class="p-6 flex items-center space-x-3 border-b border-brand-border shrink-0">
+    <img alt="IIT Bombay" class="w-12 h-12 object-contain" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCEyb5WrMiaxMkrIKJ5-MqZvAATp3QEqtnpRCEOD_ZbJymsm7ZHTGNP33gvj3Q2aXUTJtChs8_ClXNSAh5djEOAwiVg02IB1JCZK8HK876MvgmdwE7wPx6CyxfqKklWpxJmXCZ0NhdyMbltRF7xORKetT-PrSm6mOmHa_gxRBh5zXeChpZSZslpkCNGSiwUTwxlYJipEVn72YXwXQ1BRmTw587FKmwCpZeAKy1vkVn1vrLLCB8XUw1R6zvP0tv9vw8oibG6ILREDjk">
+    <div><h1 class="text-xl font-display tracking-wider text-gray-800">IIT BOMBAY</h1><h2 class="text-sm font-bold text-brand-success tracking-widest font-display">UTM COMMAND</h2></div>
+  </div>
+  <!-- Nav -->
+  <nav class="p-4 space-y-1 shrink-0">
+    <a class="nav-link flex items-center space-x-3 px-4 py-2.5 rounded-xl bg-orange-100/50 text-brand-accent font-medium border border-orange-200/50 w-full" href="#" data-page="overview"><i class="fa-solid fa-border-all w-5 text-center"></i><span>Overview</span></a>
+    <a class="nav-link flex items-center space-x-3 px-4 py-2.5 rounded-xl text-gray-600 hover:bg-gray-100/50 transition-colors w-full" href="#" data-page="airspace"><i class="fa-solid fa-layer-group w-5 text-center"></i><span>Airspace</span></a>
+    <a class="nav-link flex items-center space-x-3 px-4 py-2.5 rounded-xl text-gray-600 hover:bg-gray-100/50 transition-colors w-full" href="#" data-page="safety"><i class="fa-solid fa-shield-halved w-5 text-center"></i><span>Safety</span></a>
+    <a class="nav-link flex items-center space-x-3 px-4 py-2.5 rounded-xl text-gray-600 hover:bg-gray-100/50 transition-colors w-full" href="#" data-page="fleet"><i class="fa-solid fa-plane w-5 text-center"></i><span>Fleet</span></a>
+    <a class="nav-link flex items-center space-x-3 px-4 py-2.5 rounded-xl text-gray-600 hover:bg-gray-100/50 transition-colors w-full" href="#" data-page="temporal"><i class="fa-regular fa-clock w-5 text-center"></i><span>Temporal</span></a>
+    <a class="nav-link flex items-center space-x-3 px-4 py-2.5 rounded-xl text-gray-600 hover:bg-gray-100/50 transition-colors w-full" href="#" data-page="predictive"><i class="fa-solid fa-chart-line w-5 text-center"></i><span>Predictive</span></a>
+    <a class="nav-link flex items-center space-x-3 px-4 py-2.5 rounded-xl text-gray-600 hover:bg-gray-100/50 transition-colors w-full" href="#" data-page="algo"><i class="fa-solid fa-microchip w-5 text-center"></i><span>Algorithm</span></a>
+    <a class="nav-link flex items-center space-x-3 px-4 py-2.5 rounded-xl text-gray-600 hover:bg-gray-100/50 transition-colors w-full" href="#" data-page="intel"><i class="fa-solid fa-satellite-dish w-5 text-center"></i><span>Intel</span></a>
+  </nav>
+  <!-- Scrollable bottom section -->
+  <div class="flex-1 overflow-y-auto scrollbar-hide px-5 py-3 space-y-3">
+    <!-- Weather -->
+    <div class="glass-panel rounded-xl p-3">
+      <p class="text-[9px] font-bold text-gray-500 mb-2 tracking-widest uppercase" id="wx-location">Weather: Powai, Mumbai</p>
+      <div class="flex items-center justify-between">
+        <div class="flex items-center space-x-2"><i class="fa-solid fa-cloud-sun text-brand-accent text-lg"></i><span class="text-xl metric-value text-gray-800" id="wx-temp">–</span></div>
+        <div class="text-right"><p class="text-[9px] font-bold text-gray-600 uppercase" id="wx-code">–</p><p class="text-[8px] text-gray-400 font-mono" id="wx-humidity">–</p></div>
+      </div>
+      <div class="mt-2 pt-2 border-t border-brand-border/30 space-y-1">
+        <p class="text-[9px] text-gray-700 font-medium" id="wx-wind">Loading…</p>
+        <p class="text-[8px] text-gray-400 font-mono">Updates with map position · OpenMeteo</p>
+      </div>
+    </div>
+    <!-- Ticketing -->
+    <div class="glass-panel rounded-xl p-3">
+      <p class="text-[9px] font-bold text-gray-500 mb-2 tracking-widest uppercase">Ticketing System</p>
+      <div class="flex items-center justify-between mb-2">
+        <div class="flex items-center space-x-2"><i class="fa-solid fa-satellite-dish text-brand-blue text-sm"></i><span class="text-[10px] font-bold text-gray-800">DGCA COMMS</span></div>
+        <span class="px-1.5 py-0.5 bg-brand-blue/10 text-brand-blue text-[8px] font-bold rounded uppercase">Active</span>
+      </div>
+      <p class="text-[9px] text-gray-500 mb-2 leading-tight">Regulatory requests and flight permit clearance.</p>
+      <button class="w-full py-1.5 bg-brand-blue text-white text-[9px] font-bold rounded-lg hover:bg-blue-600 transition-colors uppercase tracking-wider" onclick="alert('Ticketing — coming soon')">+ New Ticket</button>
+      <div class="mt-2 pt-2 border-t border-brand-border/30 flex justify-between">
+        <span class="text-[8px] text-gray-400 uppercase">Pending</span>
+        <span class="text-[10px] font-bold text-brand-accent">03</span>
+      </div>
+    </div>
+    <!-- Trial & Path Run Selector -->
+    <div class="glass-panel rounded-xl p-3 space-y-2">
+      <div class="flex items-center justify-between">
+        <p class="text-[9px] font-bold text-gray-500 uppercase tracking-widest">Trial Run</p>
+        <button id="trial-panel-toggle" class="text-[9px] font-mono font-bold text-brand-accent bg-orange-50 hover:bg-orange-100 px-2 py-1 rounded border border-brand-accent/40 transition-all flex items-center gap-1">
+          <i class="fa-solid fa-shuffle text-[8px]"></i> Switch
+        </button>
+      </div>
+      <select id="trial-select" class="w-full text-[10px] font-mono bg-white border border-brand-border rounded-lg px-2 py-1.5 text-gray-700 focus:ring-1 focus:ring-brand-accent outline-none"><option>— connect DB —</option></select>
+      <!-- Trial compare panel -->
+      <div id="trial-compare-panel" class="hidden space-y-1">
+        <p class="text-[8px] font-mono text-gray-400 uppercase tracking-wider mb-1">All Trials — click to switch</p>
+        <div id="trial-toggle-list" class="space-y-1 max-h-36 overflow-y-auto scrollbar-hide">
+          <p class="text-[10px] text-gray-400 font-mono text-center py-2">Connect DB to see trials</p>
+        </div>
+      </div>
+      <!-- Path run buttons -->
+      <div id="pr-btns"></div>
+    </div>
+  </div>
+  <!-- User -->
+  <div class="p-5 border-t border-brand-border/30 shrink-0">
+    <div class="flex items-center justify-between">
+      <div class="flex items-center space-x-3">
+        <div class="relative">
+          <div class="w-9 h-9 rounded-full bg-brand-accent/20 flex items-center justify-center font-bold text-brand-accent text-sm">AG</div>
+          <div class="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 border border-white rounded-full"></div>
+        </div>
+        <div><p class="text-sm font-semibold text-gray-800" id="sidebar-user-name">Akash G.</p><p class="text-xs text-gray-500">Researcher</p></div>
+      </div>
+      <div class="flex items-center space-x-3 text-gray-300" title="Coming soon">
+        <i class="fa-solid fa-gear text-sm"></i><i class="fa-regular fa-bell text-sm"></i>
+      </div>
+    </div>
+    <div class="mt-2 flex items-center justify-between">
+      <span id="live-badge" class="text-[9px] font-mono font-bold text-gray-400">● OFFLINE</span>
+      <span id="live-clock" class="text-[9px] font-mono text-gray-400"></span>
+    </div>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<main class="flex-1 flex flex-col h-full overflow-hidden bg-brand-bg">
+  <div class="flex-1 overflow-y-auto overflow-x-hidden p-5 flex flex-col scrollbar-hide gap-5">
+
+    <!-- OVERVIEW PAGE -->
+    <div class="page-panel flex flex-col gap-5" data-page="overview">
+
+      <!-- KPI Strip -->
+      <div class="grid grid-cols-7 gap-3">
+        <div class="glass-panel rounded-2xl p-3 flex flex-col justify-center text-center"><p class="text-3xl metric-value text-gray-800 leading-none" id="kpi-drones">–</p><p class="text-[0.6rem] text-gray-500 uppercase font-semibold mt-1 tracking-wide">Total Drones</p><p class="text-[9px] text-brand-success mt-1 font-mono"><i class="fa-solid fa-caret-up"></i> vs yesterday</p></div>
+        <div class="glass-panel rounded-2xl p-3 flex flex-col justify-center text-center"><p class="text-3xl metric-value text-brand-success leading-none" id="kpi-success">–</p><p class="text-[0.6rem] text-gray-500 uppercase font-semibold mt-1 tracking-wide">Mission Success</p><p class="text-[9px] text-brand-success mt-1 font-mono"><i class="fa-solid fa-caret-up"></i> vs yesterday</p></div>
+        <div class="glass-panel rounded-2xl p-3 flex flex-col justify-center text-center"><p class="text-3xl metric-value text-red-500 leading-none" id="kpi-crash">–</p><p class="text-[0.6rem] text-gray-500 uppercase font-semibold mt-1 tracking-wide">Crash Rate</p><p class="text-[9px] text-brand-success mt-1 font-mono"><i class="fa-solid fa-caret-down"></i> vs yesterday</p></div>
+        <div class="glass-panel rounded-2xl p-3 flex flex-col justify-center text-center"><p class="text-3xl metric-value text-orange-500 leading-none" id="kpi-coll">–</p><p class="text-[0.6rem] text-gray-500 uppercase font-semibold mt-1 tracking-wide">Collision Events</p><p class="text-[9px] text-red-500 mt-1 font-mono"><i class="fa-solid fa-caret-up"></i> vs yesterday</p></div>
+        <div class="glass-panel rounded-2xl p-3 flex flex-col justify-center text-center"><p class="text-3xl metric-value text-brand-blue leading-none" id="kpi-batt">–</p><p class="text-[0.6rem] text-gray-500 uppercase font-semibold mt-1 tracking-wide">Battery Used</p><p class="text-[9px] text-brand-success mt-1 font-mono"><i class="fa-solid fa-caret-down"></i> vs yesterday</p></div>
+        <div class="glass-panel rounded-2xl p-3 flex flex-col justify-center text-center"><p class="text-3xl metric-value text-gray-800 leading-none" id="kpi-dist">–</p><p class="text-[0.6rem] text-gray-500 uppercase font-semibold mt-1 tracking-wide">Total Distance</p><p class="text-[9px] text-gray-500 mt-1 font-mono"><i class="fa-solid fa-caret-up"></i> vs yesterday</p></div>
+        <div class="glass-panel rounded-2xl p-3 flex flex-col justify-center text-center"><p class="text-3xl metric-value text-brand-success leading-none" id="kpi-safe">–</p><p class="text-[0.6rem] text-gray-500 uppercase font-semibold mt-1 tracking-wide">Safe Rate</p><p class="text-[9px] text-brand-success mt-1 font-mono"><i class="fa-solid fa-caret-up"></i> vs yesterday</p></div>
+      </div>
+
+      <!-- Main grid: 9 cols center + 3 cols right -->
+      <div class="grid grid-cols-12 gap-4">
+
+        <!-- CENTER: Digital Twin (9 cols) -->
+        <div class="col-span-9 glass-panel rounded-2xl flex flex-col overflow-hidden" style="height:580px;">
+          <div class="p-3 flex justify-between items-center shrink-0">
+            <div class="flex items-center space-x-2"><div class="w-1 h-4 bg-brand-accent rounded"></div><h3 class="text-sm font-bold text-gray-800 uppercase tracking-widest">Live Airspace Digital Twin</h3></div>
+            <p class="text-xs text-gray-500 font-mono">IIT Bombay, Powai Campus · Esri Satellite</p>
+          </div>
+
+          <!-- Map + chart panels -->
+          <div class="flex-1 relative overflow-hidden rounded-xl mx-2">
+            <!-- LEAFLET MAP -->
+            <div id="leaflet-wrap" class="absolute inset-0" style="background:#e5dfd4;">
+              <div id="leaflet-map"></div>
+              <!-- Altitude layers overlay -->
+              <div class="absolute left-3 top-3 z-[500] bg-white/90 backdrop-blur-sm rounded-xl shadow-lg border border-white/60 p-3" style="width:130px;">
+                <p class="text-[8px] font-bold text-gray-500 mb-2 tracking-widest uppercase">Altitude Layers</p>
+                <div class="space-y-1.5">
+                  <div class="flex items-center justify-between text-[10px]"><div class="flex items-center space-x-2"><div class="w-2.5 h-2.5 rounded-full bg-brand-success"></div><span class="font-semibold text-gray-800">L4 150m+</span></div><i class="fa-regular fa-eye text-gray-400 cursor-pointer hover:text-gray-700 text-xs"></i></div>
+                  <div class="flex items-center justify-between text-[10px]"><div class="flex items-center space-x-2"><div class="w-2.5 h-2.5 rounded-full bg-yellow-500"></div><span class="font-semibold text-gray-800">L3 100m</span></div><i class="fa-regular fa-eye text-gray-400 cursor-pointer hover:text-gray-700 text-xs"></i></div>
+                  <div class="flex items-center justify-between text-[10px]"><div class="flex items-center space-x-2"><div class="w-2.5 h-2.5 rounded-full bg-brand-blue"></div><span class="font-semibold text-gray-800">L2 50m</span></div><i class="fa-regular fa-eye text-gray-400 cursor-pointer hover:text-gray-700 text-xs"></i></div>
+                  <div class="flex items-center justify-between text-[10px]"><div class="flex items-center space-x-2"><div class="w-2.5 h-2.5 rounded-full bg-purple-500"></div><span class="font-semibold text-gray-800">L1 0m</span></div><i class="fa-regular fa-eye text-gray-400 cursor-pointer hover:text-gray-700 text-xs"></i></div>
+                </div>
+              </div>
+              <!-- Wind compass overlay -->
+              <div class="absolute left-3 bottom-3 z-[500] bg-white/90 backdrop-blur-sm rounded-xl shadow-lg border border-white/60 p-2 flex flex-col items-center" style="width:100px;">
+                <p class="text-[8px] font-bold text-gray-500 mb-1 tracking-widest uppercase w-full">Wind</p>
+                <canvas id="windCompassCanvas" width="80" height="80" style="display:block;"></canvas>
+                <p class="text-[8px] text-gray-600 font-mono text-center mt-1" id="wind-label">– km/h</p>
+              </div>
+              <!-- Map controls: Search + Filter -->
+              <div class="absolute right-3 top-3 z-[500] flex flex-col space-y-2">
+                <div class="relative">
+                  <button id="map-search-btn" class="w-10 h-10 bg-white/90 rounded-full shadow-lg flex items-center justify-center text-gray-700 hover:text-brand-accent transition-all" title="Search location">
+                    <i class="fa-solid fa-magnifying-glass text-sm"></i>
+                  </button>
+                  <div id="map-search-box" class="hidden absolute right-12 top-0 z-[600]" style="width:260px;">
+                    <div class="bg-white border border-brand-border rounded-xl shadow-lg overflow-hidden">
+                      <div class="flex items-center px-3 py-2 border-b border-brand-border/50">
+                        <i class="fa-solid fa-magnifying-glass text-gray-400 text-xs mr-2"></i>
+                        <input id="map-search-input" type="text" placeholder="Search place or landmark…" class="flex-1 text-[11px] font-mono outline-none bg-transparent text-gray-800 placeholder-gray-400">
+                      </div>
+                      <div id="search-suggestions" class="hidden max-h-52 overflow-y-auto divide-y divide-gray-50"></div>
+                    </div>
+                  </div>
+                </div>
+                <div class="relative">
+                  <button id="map-filter-btn" class="h-10 px-3 bg-white/90 rounded-full shadow-lg flex items-center justify-center text-gray-700 hover:text-brand-accent transition-all gap-1" title="Filter collision markers">
+                    <i class="fa-solid fa-filter text-[10px]"></i>
+                    <span class="text-[9px] font-mono font-bold">All Events</span>
+                  </button>
+                  <div id="filter-panel" class="hidden absolute right-12 top-0 bg-white border border-brand-border rounded-xl shadow-lg p-3 z-[600]" style="width:170px;">
+                    <p class="text-[8px] font-mono font-bold text-gray-400 uppercase tracking-widest mb-2">Show Collisions</p>
+                    <button class="filter-opt w-full text-left text-[10px] font-mono text-gray-700 hover:text-brand-accent px-2 py-1 rounded hover:bg-orange-50" data-filter="all">All events</button>
+                    <button class="filter-opt w-full text-left text-[10px] font-mono text-gray-700 hover:text-brand-accent px-2 py-1 rounded hover:bg-orange-50" data-filter="top10">Top 10 hotspots</button>
+                    <button class="filter-opt w-full text-left text-[10px] font-mono text-gray-700 hover:text-brand-accent px-2 py-1 rounded hover:bg-orange-50" data-filter="direct">Direct only</button>
+                    <button class="filter-opt w-full text-left text-[10px] font-mono text-gray-700 hover:text-brand-accent px-2 py-1 rounded hover:bg-orange-50" data-filter="proximity">Proximity only</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <!-- CHART PANELS (hidden, shown when tab clicked) -->
+            <div id="panel-mission" class="chart-tab-panel hidden absolute inset-0 bg-[#FAF7F2] p-4">
+              <canvas id="missionHealthChart" style="width:100%;height:100%;"></canvas>
+            </div>
+            <div id="panel-collision" class="chart-tab-panel hidden absolute inset-0 bg-[#FAF7F2] p-4">
+              <canvas id="collisionTimelineChart" style="width:100%;height:100%;"></canvas>
+            </div>
+            <div id="panel-battery" class="chart-tab-panel hidden absolute inset-0 bg-[#FAF7F2] p-4">
+              <canvas id="batteryHealthChart" style="width:100%;height:100%;"></canvas>
+            </div>
+          </div>
+
+          <!-- Tab buttons -->
+          <div class="flex items-center gap-2 px-3 py-2 shrink-0">
+            <button class="chart-tab-btn flex-1 py-2 px-3 bg-white/50 border border-brand-border rounded-xl text-[9px] font-mono font-bold text-brand-accent uppercase tracking-widest transition-all relative overflow-hidden" data-tab="map"><span class="relative z-10">Live Map</span><div class="tab-ind absolute bottom-0 left-0 w-full h-0.5 bg-brand-accent"></div></button>
+            <button class="chart-tab-btn flex-1 py-2 px-3 bg-white/30 border border-brand-border/50 rounded-xl text-[9px] font-mono font-bold text-gray-500 uppercase tracking-widest transition-all relative overflow-hidden" data-tab="mission">Mission Health</button>
+            <button class="chart-tab-btn flex-1 py-2 px-3 bg-white/30 border border-brand-border/50 rounded-xl text-[9px] font-mono font-bold text-gray-500 uppercase tracking-widest transition-all relative overflow-hidden" data-tab="collision">Collision Timeline</button>
+            <button class="chart-tab-btn flex-1 py-2 px-3 bg-white/30 border border-brand-border/50 rounded-xl text-[9px] font-mono font-bold text-gray-500 uppercase tracking-widest transition-all relative overflow-hidden" data-tab="battery">Battery Health</button>
+          </div>
+        </div>
+
+        <!-- RIGHT COLUMN (3 cols) -->
+        <div class="col-span-3 flex flex-col gap-3" style="height:580px;overflow-y:auto;">
+
+          <!-- Airspace Utilization — ECharts horizontal bar -->
+          <div class="glass-panel rounded-2xl p-4 flex flex-col shrink-0" style="height:185px;">
+            <div class="flex items-center space-x-2 mb-1 shrink-0"><div class="w-1 h-4 bg-brand-accent rounded"></div><h3 class="text-[10px] font-bold text-gray-800 uppercase tracking-widest">Airspace Utilization</h3></div>
+            <div id="airspaceChart" style="flex:1;min-height:0;"></div>
+          </div>
+
+          <!-- Fleet Composition — Chart.js horizontal bar -->
+          <div class="glass-panel rounded-2xl p-4 flex flex-col shrink-0" style="height:210px;">
+            <div class="flex items-center space-x-2 mb-2 shrink-0">
+              <div class="w-1 h-4 bg-brand-accent rounded"></div>
+              <h3 class="text-[10px] font-bold text-gray-800 uppercase tracking-widest">Fleet Composition</h3>
+            </div>
+            <div id="fleetChart" style="flex:1;min-height:0;position:relative;"></div>
+          </div>
+
+          <!-- Drone Related Updates — Stitch design, static placeholder -->
+          <div class="glass-panel rounded-2xl p-4 flex flex-col flex-1 border-2 border-brand-border/50" style="min-height:160px;">
+            <div class="flex items-center space-x-2 mb-4 shrink-0">
+              <div class="w-1 h-4 bg-gray-400 rounded"></div>
+              <h3 class="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Drone Related Updates</h3>
+            </div>
+            <div class="flex-1 space-y-3 overflow-y-auto scrollbar-hide">
+              <div class="flex items-start space-x-3 border-b border-brand-border/30 pb-2">
+                <div class="w-1.5 h-1.5 rounded-full bg-brand-accent mt-1.5"></div>
+                <div>
+                  <p class="text-[10px] font-bold text-gray-800">DRN-901</p>
+                  <p class="text-[9px] text-gray-600 leading-tight">Flight path correction applied via Sector B</p>
+                </div>
+              </div>
+              <div class="flex items-start space-x-3 border-b border-brand-border/30 pb-2">
+                <div class="w-1.5 h-1.5 rounded-full bg-brand-success mt-1.5"></div>
+                <div>
+                  <p class="text-[10px] font-bold text-gray-800 uppercase">Sector Alpha</p>
+                  <p class="text-[9px] text-gray-600 leading-tight">Corridor 4 cleared for emergency transit</p>
+                </div>
+              </div>
+              <div class="flex items-start space-x-3">
+                <div class="w-1.5 h-1.5 rounded-full bg-brand-blue mt-1.5"></div>
+                <div>
+                  <p class="text-[10px] font-bold text-gray-800 uppercase">Regulatory</p>
+                  <p class="text-[9px] text-gray-600 leading-tight">New NOTAM issued for academic zone</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bottom: Mission Intelligence & Comms -->
+      <div class="glass-panel rounded-2xl overflow-hidden shrink-0" style="height:210px;">
+        <div class="p-3 border-b border-brand-border/30 flex justify-between items-center bg-white/30 shrink-0">
+          <div class="flex items-center space-x-3"><div class="w-1 h-4 bg-red-500 rounded"></div><h3 class="text-xs font-bold text-gray-800 uppercase tracking-widest">Live Mission Intelligence &amp; Comms</h3></div>
+          <div class="flex items-center space-x-4">
+            <div class="flex items-center space-x-2"><span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span><span class="text-[10px] font-mono text-gray-500 uppercase">DGCA Link: Active</span></div>
+            <button class="px-3 py-1.5 bg-red-500 text-white rounded-lg text-xs font-bold hover:bg-red-600 flex items-center space-x-1" onclick="alert('SOS — coming soon')"><span class="material-symbols-outlined text-sm">emergency</span><span>SOS</span></button>
+          </div>
+        </div>
+        <div class="flex divide-x divide-brand-border/30 overflow-hidden" style="height:calc(100% - 46px);">
+          <div class="flex-[2] overflow-y-auto scrollbar-hide bg-black/5 p-2">
+            <table class="w-full text-left font-mono text-[10px] border-separate border-spacing-y-1">
+              <thead><tr class="text-gray-400 uppercase tracking-tighter"><th class="pb-1 px-2">Tick</th><th class="pb-1 px-2">Drone</th><th class="pb-1 px-2">Type</th><th class="pb-1 px-2">Details</th><th class="pb-1 px-2">Severity</th></tr></thead>
+              <tbody id="comms-tbody"><tr><td class="py-1.5 px-2 text-gray-400" colspan="5">Connect DB to see live data</td></tr></tbody>
+            </table>
+          </div>
+          <div class="flex-1 flex flex-col bg-white/20 p-2">
+            <p class="text-[9px] font-bold text-gray-500 mb-2 tracking-widest uppercase">Emergency Messaging <span class="text-gray-300 font-normal normal-case">(coming soon)</span></p>
+            <div class="flex-1 space-y-2 overflow-y-auto scrollbar-hide mb-2">
+              <div class="bg-brand-blue/10 p-2 rounded-lg border border-brand-blue/20"><p class="text-[8px] font-bold text-brand-blue mb-1">HQ COMMAND</p><p class="text-[9px] text-gray-700">Confirming receipt of propulsion alert on DRN-901. Standby for reroute.</p></div>
+              <div class="bg-gray-100 p-2 rounded-lg border border-gray-200"><p class="text-[8px] font-bold text-gray-500 mb-1">YOU</p><p class="text-[9px] text-gray-700">Reroute path calculated. Awaiting DGCA approval.</p></div>
+            </div>
+            <div class="relative opacity-50"><input disabled class="w-full bg-white border border-brand-border rounded-lg px-3 py-1.5 text-xs cursor-not-allowed" placeholder="Messaging — coming soon"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Status bar -->
+      <div class="flex items-center gap-3 text-[9px] font-mono text-gray-400 pb-1 shrink-0">
+        <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+        <span class="text-brand-success font-bold">All Systems Operational</span>
+        <span class="text-gray-300">|</span>
+        <span id="status-alert">Connect database to load live data</span>
+        <span class="text-gray-300">|</span>
+        <span class="text-brand-blue font-bold" id="current-trial-display"></span>
+      </div>
+    </div><!-- /overview -->
+
+    <!-- Stub pages -->
+    <!-- ═══════ AIRSPACE PAGE ═══════ -->
+    <div class="page-panel hidden flex flex-col gap-5" data-page="airspace">
+
+      <!-- KPI Strip — 6 Airspace KPIs -->
+      <div class="grid grid-cols-6 gap-3 shrink-0">
+        <div class="glass-panel rounded-2xl p-3 flex flex-col justify-center text-center">
+          <p class="text-3xl metric-value text-gray-800 leading-none" id="as-kpi-vol">12,845</p>
+          <p class="text-[0.6rem] text-gray-500 uppercase font-semibold mt-1 tracking-wide">Total Airspace Volume</p>
+          <p class="text-[9px] text-brand-success mt-1 font-mono"><i class="fa-solid fa-caret-up"></i> 3.2% vs yesterday</p>
+        </div>
+        <div class="glass-panel rounded-2xl p-3 flex flex-col justify-center text-center">
+          <p class="text-3xl metric-value text-brand-blue leading-none" id="as-kpi-zones">36 / 58</p>
+          <p class="text-[0.6rem] text-gray-500 uppercase font-semibold mt-1 tracking-wide">Active Airspace Zones</p>
+          <p class="text-[9px] text-brand-success mt-1 font-mono"><i class="fa-solid fa-caret-up"></i> 5 vs yesterday</p>
+        </div>
+        <div class="glass-panel rounded-2xl p-3 flex flex-col justify-center text-center">
+          <p class="text-3xl metric-value text-red-500 leading-none" id="as-kpi-restricted">8</p>
+          <p class="text-[0.6rem] text-gray-500 uppercase font-semibold mt-1 tracking-wide">Restricted Zones</p>
+          <p class="text-[9px] text-brand-success mt-1 font-mono"><i class="fa-solid fa-caret-down"></i> 1 vs yesterday</p>
+        </div>
+        <div class="glass-panel rounded-2xl p-3 flex flex-col justify-center text-center">
+          <p class="text-3xl metric-value text-orange-500 leading-none" id="as-kpi-reserv">14</p>
+          <p class="text-[0.6rem] text-gray-500 uppercase font-semibold mt-1 tracking-wide">Temporary Reservations</p>
+          <p class="text-[9px] text-orange-400 mt-1 font-mono"><i class="fa-solid fa-caret-up"></i> 2 vs yesterday</p>
+        </div>
+        <div class="glass-panel rounded-2xl p-3 flex flex-col justify-center text-center">
+          <p class="text-3xl metric-value text-brand-success leading-none" id="as-kpi-util">68.4%</p>
+          <p class="text-[0.6rem] text-gray-500 uppercase font-semibold mt-1 tracking-wide">Airspace Utilization</p>
+          <p class="text-[9px] text-brand-success mt-1 font-mono"><i class="fa-solid fa-caret-up"></i> 6.7% vs yesterday</p>
+        </div>
+        <div class="glass-panel rounded-2xl p-3 flex flex-col justify-center text-center">
+          <p class="text-3xl metric-value text-brand-success leading-none" id="as-kpi-conflicts">2</p>
+          <p class="text-[0.6rem] text-gray-500 uppercase font-semibold mt-1 tracking-wide">Conflicts (Today)</p>
+          <p class="text-[9px] text-brand-success mt-1 font-mono"><i class="fa-solid fa-caret-down"></i> 1 vs yesterday</p>
+        </div>
+      </div>
+
+      <!-- ROW 2: Map (wide) + Airspace Structure + Status + Active Restrictions -->
+      <div class="grid grid-cols-12 gap-4 shrink-0">
+
+        <!-- Airspace Overview Map — 6 cols -->
+        <div class="col-span-6 glass-panel rounded-2xl flex flex-col overflow-hidden" style="height:420px;">
+          <div class="p-3 flex justify-between items-center shrink-0">
+            <div class="flex items-center space-x-2">
+              <div class="w-1 h-4 bg-brand-blue rounded"></div>
+              <h3 class="text-[10px] font-bold text-gray-800 uppercase tracking-widest">Airspace Overview Map</h3>
+              <i class="fa-regular fa-circle-question text-gray-400 text-xs cursor-pointer"></i>
+            </div>
+          </div>
+          <div class="flex-1 relative overflow-hidden rounded-xl mx-2 mb-2">
+            <!-- Reuse same Leaflet map — airspace-specific ID -->
+            <div id="as-leaflet-wrap" class="absolute inset-0" style="background:#0a1628;">
+              <div id="as-leaflet-map" style="width:100%;height:100%;z-index:1;"></div>
+              <!-- Layer toggle panel — dataset-driven only -->
+              <div class="absolute left-3 top-3 z-[500] bg-white/95 backdrop-blur-sm rounded-xl shadow-lg border border-white/60 p-3" style="width:162px;">
+                <p class="text-[8px] font-bold text-gray-500 mb-2 tracking-widest uppercase">Map Layers</p>
+                <div class="space-y-1.5">
+                  <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="as-lyr-drones" checked class="accent-brand-blue w-3 h-3"><span class="text-[9px] text-gray-700">Active Drone Positions</span></label>
+                  <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="as-lyr-collisions" checked class="accent-red-500 w-3 h-3"><span class="text-[9px] text-gray-700">Collision Locations</span></label>
+                  <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="as-lyr-nearmiss" checked class="accent-orange-500 w-3 h-3"><span class="text-[9px] text-gray-700">Near Miss Locations</span></label>
+                  <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="as-lyr-clusters" class="accent-purple-500 w-3 h-3"><span class="text-[9px] text-gray-700">Drone Clusters</span></label>
+                </div>
+                <div class="mt-2 pt-2 border-t border-brand-border/40 space-y-1.5">
+                  <p class="text-[8px] font-mono text-gray-400 uppercase tracking-widest mb-1">Filter by</p>
+                  <select id="as-filter-type" class="w-full text-[9px] font-mono bg-white border border-brand-border rounded px-1.5 py-1 text-gray-700 outline-none">
+                    <option value="">All Vehicle Types</option>
+                    <option value="quad">Quadcopter</option>
+                    <option value="hexa">Hexacopter</option>
+                    <option value="octa">Octocopter</option>
+                    <option value="vtol">VTOL</option>
+                    <option value="fixed_wing">Fixed Wing</option>
+                  </select>
+                  <select id="as-filter-status" class="w-full text-[9px] font-mono bg-white border border-brand-border rounded px-1.5 py-1 text-gray-700 outline-none">
+                    <option value="">All Statuses</option>
+                    <option value="Complete">Complete</option>
+                    <option value="Collision">Collision</option>
+                    <option value="Incomplete">Battery Fail</option>
+                    <option value="Cancelled">Cancelled</option>
+                  </select>
+                  <select id="as-filter-layer" class="w-full text-[9px] font-mono bg-white border border-brand-border rounded px-1.5 py-1 text-gray-700 outline-none">
+                    <option value="">All Layers</option>
+                    <option value="1">Layer 1 (0m)</option>
+                    <option value="2">Layer 2 (50m)</option>
+                    <option value="3">Layer 3 (100m)</option>
+                    <option value="4">Layer 4 (150m)</option>
+                  </select>
+                </div>
+              </div>
+              <!-- Map controls right — search + filter (same mechanism as overview) -->
+              <div class="absolute right-3 top-3 z-[500] flex flex-col space-y-2">
+                <div class="relative">
+                  <button id="as-search-btn" class="w-10 h-10 bg-white/90 rounded-full shadow-lg flex items-center justify-center text-gray-700 hover:text-brand-accent transition-all" title="Search location">
+                    <span class="material-symbols-outlined text-sm">search</span>
+                  </button>
+                  <div id="as-search-box" class="hidden absolute right-12 top-0 z-[600]" style="width:260px;">
+                    <div class="bg-white border border-brand-border rounded-xl shadow-lg overflow-hidden">
+                      <div class="flex items-center px-3 py-2 border-b border-brand-border/50">
+                        <i class="fa-solid fa-magnifying-glass text-gray-400 text-xs mr-2"></i>
+                        <input id="as-search-input" type="text" placeholder="Search place or landmark…" class="flex-1 text-[11px] font-mono outline-none bg-transparent text-gray-800 placeholder-gray-400">
+                      </div>
+                      <div id="as-search-suggestions" class="hidden max-h-52 overflow-y-auto divide-y divide-gray-50"></div>
+                    </div>
+                  </div>
+                </div>
+                <div class="relative">
+                  <button id="as-map-filter-btn" class="w-10 h-10 bg-white/90 rounded-full shadow-lg flex items-center justify-center text-gray-700 hover:text-brand-accent transition-all" title="Filter drone markers">
+                    <span class="material-symbols-outlined text-sm">tune</span>
+                  </button>
+                </div>
+              </div>
+              <!-- Timestamp bottom-right -->
+              <div class="absolute bottom-2 right-3 z-[500]">
+                <p class="text-[8px] font-mono text-white/70" id="as-map-timestamp">Updated: —</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Airspace Structure — wide chart (5 cols), tall and readable -->
+        <div class="col-span-4 glass-panel rounded-2xl p-4 flex flex-col" style="height:420px;">
+          <div class="flex items-center space-x-2 mb-3">
+            <div class="w-1 h-4 bg-brand-blue rounded"></div>
+            <h3 class="text-[10px] font-bold text-gray-800 uppercase tracking-widest">Airspace Structure</h3>
+          </div>
+          <div id="as-structure" style="flex:1;min-height:0;"></div>
+        </div>
+
+        <!-- Right col: KPIs stacked vertically + Status —  2 cols -->
+        <div class="col-span-2 flex flex-col gap-3" style="height:420px;">
+          <!-- Airspace Status: KPIs LEFT + bar chart RIGHT side by side -->
+          <div class="glass-panel rounded-2xl p-3 flex flex-col" style="flex:1;min-height:0;">
+            <div class="flex items-center space-x-2 mb-2">
+              <div class="w-1 h-4 bg-brand-accent rounded"></div>
+              <h3 class="text-[10px] font-bold text-gray-800 uppercase tracking-widest">Airspace Status</h3>
+            </div>
+            <!-- Side-by-side: KPIs left, chart right -->
+            <div class="flex gap-2 flex-1 min-h-0">
+              <!-- LEFT: real KPIs from data -->
+              <div class="flex flex-col gap-1.5 justify-center" style="width:46%;flex-shrink:0;">
+                <div class="flex justify-between items-center py-1 px-2 rounded-lg bg-brand-success/5">
+                  <p class="text-[8px] font-mono text-gray-400 uppercase tracking-wider">Complete</p>
+                  <p class="text-[11px] font-bold text-brand-success" id="as-stat-complete">—</p>
+                </div>
+                <div class="flex justify-between items-center py-1 px-2 rounded-lg bg-red-50">
+                  <p class="text-[8px] font-mono text-gray-400 uppercase tracking-wider">Collision</p>
+                  <p class="text-[11px] font-bold text-red-500" id="as-stat-collision">—</p>
+                </div>
+                <div class="flex justify-between items-center py-1 px-2 rounded-lg bg-orange-50">
+                  <p class="text-[8px] font-mono text-gray-400 uppercase tracking-wider">Bat Fail</p>
+                  <p class="text-[11px] font-bold text-orange-500" id="as-stat-battery">—</p>
+                </div>
+                <div class="flex justify-between items-center py-1 px-2 rounded-lg bg-gray-50">
+                  <p class="text-[8px] font-mono text-gray-400 uppercase tracking-wider">Cancelled</p>
+                  <p class="text-[11px] font-bold text-gray-500" id="as-stat-cancelled">—</p>
+                </div>
+              </div>
+              <!-- RIGHT: vehicle type bar chart -->
+              <div id="as-status-gauge" style="flex:1;min-width:0;"></div>
+            </div>
+          </div>
+          <!-- Active Restrictions (compact) -->
+          <div class="glass-panel rounded-2xl p-3 flex flex-col" style="flex:1;min-height:0;">
+            <div class="flex items-center justify-between mb-2">
+              <div class="flex items-center space-x-1.5">
+                <div class="w-1 h-4 bg-red-500 rounded"></div>
+                <h3 class="text-[10px] font-bold text-gray-800 uppercase tracking-widest">Restrictions</h3>
+              </div>
+              <span class="text-[9px] font-mono text-brand-blue cursor-pointer">All (8)</span>
+            </div>
+            <div class="flex flex-col gap-1.5 flex-1 overflow-y-auto scrollbar-hide">
+              <div class="border border-red-200 bg-red-50/40 rounded-lg p-2">
+                <div class="flex justify-between items-start mb-0.5"><span class="text-[9px] font-bold text-red-700">Research Zone R2</span><span class="text-[7px] font-bold bg-red-500 text-white px-1 py-0.5 rounded uppercase">RESTR</span></div>
+                <p class="text-[8px] font-mono text-gray-400">Until 16 May, 18:00</p>
+              </div>
+              <div class="border border-red-200 bg-red-50/40 rounded-lg p-2">
+                <div class="flex justify-between items-start mb-0.5"><span class="text-[9px] font-bold text-red-700">Defense D-12</span><span class="text-[7px] font-bold bg-red-500 text-white px-1 py-0.5 rounded uppercase">RESTR</span></div>
+                <p class="text-[8px] font-mono text-gray-400">Until 19 May, 06:00</p>
+              </div>
+              <div class="border border-orange-200 bg-orange-50/40 rounded-lg p-2">
+                <div class="flex justify-between items-start mb-0.5"><span class="text-[9px] font-bold text-orange-700">VIP Corridor</span><span class="text-[7px] font-bold bg-orange-500 text-white px-1 py-0.5 rounded uppercase">TEMP</span></div>
+                <p class="text-[8px] font-mono text-gray-400">Until 18 May, 14:00</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ROW 3: Utilization chart + Sector donut + Conflicts + Alerts -->
+      <div class="grid grid-cols-12 gap-4 shrink-0">
+        <!-- Utilization over time — 3 cols -->
+        <div class="col-span-3 glass-panel rounded-2xl p-4">
+          <div class="flex items-center space-x-2 mb-2">
+            <div class="w-1 h-4 bg-brand-blue rounded"></div>
+            <h3 class="text-[10px] font-bold text-gray-800 uppercase tracking-widest">Airspace Utilization Over Time (Today)</h3>
+          </div>
+          <div id="as-util-chart" style="height:180px;"></div>
+        </div>
+        <!-- Sector utilization — 2 cols -->
+        <div class="col-span-2 glass-panel rounded-2xl p-4 flex flex-col">
+          <div class="flex items-center space-x-2 mb-2 shrink-0">
+            <div class="w-1 h-4 bg-brand-accent rounded"></div>
+            <h3 class="text-[10px] font-bold text-gray-800 uppercase tracking-widest">Sector Utilization (Current)</h3>
+          </div>
+          <div id="as-sector-donut" class="flex-1 min-h-0" style="position:relative;"></div>
+        </div>
+        <!-- Airspace conflicts 7 days — 4 cols -->
+        <div class="col-span-4 glass-panel rounded-2xl p-4">
+          <div class="flex items-center space-x-2 mb-2">
+            <div class="w-1 h-4 bg-purple-500 rounded"></div>
+            <h3 class="text-[10px] font-bold text-gray-800 uppercase tracking-widest">Airspace Conflicts (Last 7 Days)</h3>
+          </div>
+          <div id="as-conflicts-chart" style="height:180px;"></div>
+        </div>
+        <!-- Airspace Alerts — 3 cols -->
+        <div class="col-span-3 glass-panel rounded-2xl p-4 flex flex-col">
+          <div class="flex items-center justify-between mb-3">
+            <div class="flex items-center space-x-2">
+              <div class="w-1 h-4 bg-red-500 rounded"></div>
+              <h3 class="text-[10px] font-bold text-gray-800 uppercase tracking-widest">Airspace Alerts</h3>
+            </div>
+            <span class="text-[9px] font-mono text-brand-blue cursor-pointer" onclick="comingSoon()">View All (4)</span>
+          </div>
+          <div class="flex flex-col gap-2 flex-1">
+            <div class="flex items-start gap-2 border-b border-brand-border/40 pb-2">
+              <i class="fa-solid fa-triangle-exclamation text-red-500 text-sm flex-shrink-0 mt-0.5"></i>
+              <div class="flex-1 min-w-0">
+                <p class="text-[10px] font-bold text-gray-800">Unauthorized Entry</p>
+                <p class="text-[8px] font-mono text-gray-500 leading-tight">Drone UTM-872 entered restricted Zone R2</p>
+              </div>
+              <span class="text-[8px] font-mono text-gray-400 flex-shrink-0">10:12 AM</span>
+            </div>
+            <div class="flex items-start gap-2 border-b border-brand-border/40 pb-2">
+              <i class="fa-solid fa-triangle-exclamation text-orange-500 text-sm flex-shrink-0 mt-0.5"></i>
+              <div class="flex-1 min-w-0">
+                <p class="text-[10px] font-bold text-gray-800">Altitude Deviation</p>
+                <p class="text-[8px] font-mono text-gray-500 leading-tight">Drone UTM-204 exceeded altitude limit in Sector C1</p>
+              </div>
+              <span class="text-[8px] font-mono text-gray-400 flex-shrink-0">09:45 AM</span>
+            </div>
+            <div class="flex items-start gap-2">
+              <i class="fa-solid fa-triangle-exclamation text-brand-blue text-sm flex-shrink-0 mt-0.5"></i>
+              <div class="flex-1 min-w-0">
+                <p class="text-[10px] font-bold text-gray-800">Corridor Congestion</p>
+                <p class="text-[8px] font-mono text-gray-500 leading-tight">High traffic density in Corridor C1 (12:00–14:00)</p>
+              </div>
+              <span class="text-[8px] font-mono text-gray-400 flex-shrink-0">09:21 AM</span>
+            </div>
+          </div>
+          <p class="text-[9px] font-mono text-brand-blue cursor-pointer mt-3 pt-3 border-t border-brand-border/40" onclick="comingSoon()">View All Alerts →</p>
+        </div>
+      </div>
+
+      <!-- ROW 4: Heatmap + Reservations table + Capacity Forecast -->
+      <div class="grid grid-cols-12 gap-4 shrink-0">
+        <!-- Airspace heatmap — 3 cols -->
+        <div class="col-span-3 glass-panel rounded-2xl p-4">
+          <div class="flex items-center space-x-2 mb-2">
+            <div class="w-1 h-4 bg-brand-accent rounded"></div>
+            <h3 class="text-[10px] font-bold text-gray-800 uppercase tracking-widest">Airspace Heatmap (Current Density)</h3>
+          </div>
+          <div id="as-heatmap" style="height:200px;"></div>
+        </div>
+        <!-- Temporary reservations table — 5 cols -->
+        <div class="col-span-5 glass-panel rounded-2xl p-4 flex flex-col">
+          <div class="flex items-center space-x-2 mb-2">
+            <div class="w-1 h-4 bg-orange-500 rounded"></div>
+            <h3 class="text-[10px] font-bold text-gray-800 uppercase tracking-widest">Temporary Reservations (Today)</h3>
+          </div>
+          <div class="flex-1 overflow-y-auto scrollbar-hide">
+            <table class="w-full text-[9px] font-mono border-separate border-spacing-y-1">
+              <thead><tr class="text-gray-400 uppercase tracking-wider text-[8px]">
+                <th class="text-left pb-1 px-1">Reservation ID</th>
+                <th class="text-left pb-1 px-1">Zone / Corridor</th>
+                <th class="text-left pb-1 px-1">Altitude</th>
+                <th class="text-left pb-1 px-1">Time Window</th>
+                <th class="text-left pb-1 px-1">Purpose</th>
+                <th class="text-left pb-1 px-1">Status</th>
+              </tr></thead>
+              <tbody class="text-gray-700">
+                <tr class="bg-white/40 rounded"><td class="py-1 px-1">TR-2025-118</td><td class="px-1">Corridor C1</td><td class="px-1">200–1000 ft</td><td class="px-1">09:00–13:00</td><td class="px-1">Survey</td><td class="px-1"><span class="text-[7px] font-bold bg-brand-success text-white px-1.5 py-0.5 rounded uppercase">Active</span></td></tr>
+                <tr class="bg-white/40 rounded"><td class="py-1 px-1">TR-2025-119</td><td class="px-1">Sector B3</td><td class="px-1">0–400 ft</td><td class="px-1">10:00–16:00</td><td class="px-1">Filming</td><td class="px-1"><span class="text-[7px] font-bold bg-brand-success text-white px-1.5 py-0.5 rounded uppercase">Active</span></td></tr>
+                <tr class="bg-white/40 rounded"><td class="py-1 px-1">TR-2025-120</td><td class="px-1">Sector D7</td><td class="px-1">1000–2000 ft</td><td class="px-1">11:00–17:00</td><td class="px-1">Inspection</td><td class="px-1"><span class="text-[7px] font-bold bg-brand-success text-white px-1.5 py-0.5 rounded uppercase">Active</span></td></tr>
+                <tr class="bg-white/40 rounded"><td class="py-1 px-1">TR-2025-121</td><td class="px-1">Corridor A2</td><td class="px-1">200–1000 ft</td><td class="px-1">12:00–18:00</td><td class="px-1">Delivery</td><td class="px-1"><span class="text-[7px] font-bold bg-brand-blue text-white px-1.5 py-0.5 rounded uppercase">Scheduled</span></td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p class="text-[9px] font-mono text-brand-blue cursor-pointer mt-2 pt-2 border-t border-brand-border/40" onclick="comingSoon()">View All Reservations →</p>
+        </div>
+        <!-- Fleet Occupancy gauge — 4 cols -->
+        <div class="col-span-4 glass-panel rounded-2xl p-4">
+          <div class="flex items-center space-x-2 mb-2">
+            <div class="w-1 h-4 bg-brand-success rounded"></div>
+            <h3 class="text-[10px] font-bold text-gray-800 uppercase tracking-widest">Current Fleet Occupancy</h3>
+          </div>
+          <div id="as-capacity-chart" style="height:170px;"></div>
+          <div class="flex justify-around mt-1 pt-1 border-t border-brand-border/40">
+            <div class="text-center"><p class="text-[8px] font-mono text-gray-400 uppercase tracking-wider">Active</p><p class="text-base metric-value text-brand-blue" id="as-occ-active">—</p></div>
+            <div class="text-center"><p class="text-[8px] font-mono text-gray-400 uppercase tracking-wider">Total Fleet</p><p class="text-base metric-value text-gray-800" id="as-occ-total">—</p></div>
+            <div class="text-center"><p class="text-[8px] font-mono text-gray-400 uppercase tracking-wider">Occupancy</p><p class="text-base metric-value text-brand-success" id="as-occ-pct">—</p></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <p class="text-[9px] font-mono text-gray-400 text-center pb-1 shrink-0">
+        <i class="fa-solid fa-shield-halved mr-1"></i>
+        Airspace is dynamic. Fly safe. Fly smart.
+      </p>
+
+    </div><!-- /airspace -->
+    <!-- ═══════ SAFETY PAGE ═══════ -->
+    <div class="page-panel hidden flex flex-col gap-5" data-page="safety">
+
+      <!-- KPI Strip — 6 cards, same pattern as Overview -->
+      <div class="grid grid-cols-6 gap-3 shrink-0">
+        <div class="glass-panel rounded-2xl p-3 flex flex-col justify-center text-center">
+          <p class="text-3xl metric-value text-brand-success leading-none" id="s-kpi-score">84</p>
+          <p class="text-[0.6rem] text-gray-500 uppercase font-semibold mt-1 tracking-wide">Safety Score</p>
+          <p class="text-[9px] text-brand-success mt-1 font-mono"><i class="fa-solid fa-caret-up"></i> 6 vs yesterday</p>
+        </div>
+        <div class="glass-panel rounded-2xl p-3 flex flex-col justify-center text-center">
+          <p class="text-3xl metric-value text-orange-500 leading-none" id="s-kpi-events">7</p>
+          <p class="text-[0.6rem] text-gray-500 uppercase font-semibold mt-1 tracking-wide">Safety Events Today</p>
+          <p class="text-[9px] text-orange-400 mt-1 font-mono"><i class="fa-solid fa-caret-down"></i> 2 vs yesterday</p>
+        </div>
+        <div class="glass-panel rounded-2xl p-3 flex flex-col justify-center text-center">
+          <p class="text-3xl metric-value text-red-500 leading-none" id="s-kpi-critical">1</p>
+          <p class="text-[0.6rem] text-gray-500 uppercase font-semibold mt-1 tracking-wide">Critical Events</p>
+          <p class="text-[9px] text-brand-success mt-1 font-mono"><i class="fa-solid fa-caret-down"></i> 1 vs yesterday</p>
+        </div>
+        <div class="glass-panel rounded-2xl p-3 flex flex-col justify-center text-center">
+          <p class="text-3xl metric-value text-brand-blue leading-none" id="s-kpi-violations">3</p>
+          <p class="text-[0.6rem] text-gray-500 uppercase font-semibold mt-1 tracking-wide">Airspace Violations</p>
+          <p class="text-[9px] text-orange-400 mt-1 font-mono"><i class="fa-solid fa-caret-down"></i> 2 vs yesterday</p>
+        </div>
+        <div class="glass-panel rounded-2xl p-3 flex flex-col justify-center text-center">
+          <p class="text-3xl metric-value text-orange-500 leading-none" id="s-kpi-nearmiss">6</p>
+          <p class="text-[0.6rem] text-gray-500 uppercase font-semibold mt-1 tracking-wide">Near Misses Today</p>
+          <p class="text-[9px] text-orange-400 mt-1 font-mono"><i class="fa-solid fa-caret-down"></i> 1 vs yesterday</p>
+        </div>
+        <div class="glass-panel rounded-2xl p-3 flex flex-col justify-center text-center">
+          <p class="text-3xl metric-value text-brand-success leading-none" id="s-kpi-compliance">92.6%</p>
+          <p class="text-[0.6rem] text-gray-500 uppercase font-semibold mt-1 tracking-wide">Compliance Rate</p>
+          <p class="text-[9px] text-brand-success mt-1 font-mono"><i class="fa-solid fa-caret-up"></i> 4.3% vs yesterday</p>
+        </div>
+      </div>
+
+      <!-- ROW 2: Safety Overview (gauge + trend) + Critical Alerts -->
+      <div class="grid grid-cols-12 gap-4 shrink-0">
+        <!-- Safety Overview — 9 cols -->
+        <div class="col-span-9 glass-panel rounded-2xl p-4">
+          <div class="flex items-center space-x-2 mb-3">
+            <div class="w-1 h-4 bg-brand-accent rounded"></div>
+            <h3 class="text-[10px] font-bold text-gray-800 uppercase tracking-widest">Safety Overview (Today)</h3>
+          </div>
+          <div class="grid grid-cols-2 gap-6" style="min-height:280px;">
+            <!-- Gauge left -->
+            <div class="flex flex-col items-center justify-center">
+              <p class="text-[9px] font-mono text-gray-400 uppercase tracking-widest mb-2">Overall Risk Level</p>
+              <div id="s-gauge" style="width:100%;height:200px;"></div>
+              <p class="text-[10px] font-mono text-brand-success mt-1"><i class="fa-solid fa-arrow-trend-down"></i> Trend: Improving</p>
+            </div>
+            <!-- Score trend right -->
+            <div class="flex flex-col">
+              <p class="text-[9px] font-mono text-gray-400 uppercase tracking-widest mb-2">Safety Score Trend</p>
+              <div id="s-score-trend" style="flex:1;min-height:0;height:240px;"></div>
+            </div>
+          </div>
+        </div>
+        <!-- Critical Alerts — 3 cols -->
+        <div class="col-span-3 glass-panel rounded-2xl p-4 flex flex-col">
+          <div class="flex items-center justify-between mb-3">
+            <div class="flex items-center space-x-2">
+              <div class="w-1 h-4 bg-red-500 rounded"></div>
+              <h3 class="text-[10px] font-bold text-gray-800 uppercase tracking-widest">Critical Alerts</h3>
+            </div>
+            <span class="text-[9px] font-mono text-brand-blue cursor-pointer" onclick="comingSoon()">View All (3)</span>
+          </div>
+          <div class="flex flex-col gap-3 flex-1" id="s-alerts">
+            <!-- Alert 1 -->
+            <div class="border border-red-200 bg-red-50/50 rounded-xl p-3">
+              <div class="flex items-center justify-between mb-1">
+                <span class="text-[10px] font-bold text-red-700 uppercase tracking-wide">Geofence Breach</span>
+                <span class="text-[8px] font-bold bg-red-500 text-white px-2 py-0.5 rounded uppercase">Critical</span>
+              </div>
+              <p class="text-[9px] text-gray-600 leading-tight mb-1">Drone UTM-045 breached restricted zone</p>
+              <div class="flex justify-between text-[8px] font-mono text-gray-400">
+                <span>IITB Research Area · Zone R2</span><span>10:12 AM</span>
+              </div>
+            </div>
+            <!-- Alert 2 -->
+            <div class="border border-orange-200 bg-orange-50/50 rounded-xl p-3">
+              <div class="flex items-center justify-between mb-1">
+                <span class="text-[10px] font-bold text-orange-700 uppercase tracking-wide">Near Collision</span>
+                <span class="text-[8px] font-bold bg-orange-500 text-white px-2 py-0.5 rounded uppercase">High</span>
+              </div>
+              <p class="text-[9px] text-gray-600 leading-tight mb-1">Potential collision between UTM-118 &amp; UTM-032</p>
+              <div class="flex justify-between text-[8px] font-mono text-gray-400">
+                <span>Airspace Sector A3</span><span>09:48 AM</span>
+              </div>
+            </div>
+            <!-- Alert 3 -->
+            <div class="border border-blue-200 bg-blue-50/50 rounded-xl p-3">
+              <div class="flex items-center justify-between mb-1">
+                <span class="text-[10px] font-bold text-brand-blue uppercase tracking-wide">Altitude Violation</span>
+                <span class="text-[8px] font-bold bg-brand-blue text-white px-2 py-0.5 rounded uppercase">Medium</span>
+              </div>
+              <p class="text-[9px] text-gray-600 leading-tight mb-1">Drone UTM-204 exceeded altitude limit</p>
+              <div class="flex justify-between text-[8px] font-mono text-gray-400">
+                <span>Airspace Sector B1</span><span>09:21 AM</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ROW 3: Violations donut + Heatmap + Timeline + Score Breakdown -->
+      <div class="grid grid-cols-12 gap-4 shrink-0">
+        <!-- Violations donut — 3 cols -->
+        <div class="col-span-3 glass-panel rounded-2xl p-4">
+          <div class="flex items-center space-x-2 mb-3">
+            <div class="w-1 h-4 bg-brand-accent rounded"></div>
+            <h3 class="text-[10px] font-bold text-gray-800 uppercase tracking-widest">Airspace Violations (Last 7 Days)</h3>
+          </div>
+          <div id="s-violations-donut" style="height:200px;"></div>
+          <p class="text-[9px] font-mono text-red-500 mt-2"><i class="fa-solid fa-caret-down"></i> 20% vs previous 7 days</p>
+        </div>
+        <!-- Safety Heatmap — 4 cols -->
+        <div class="col-span-4 glass-panel rounded-2xl p-4">
+          <div class="flex items-center space-x-2 mb-3">
+            <div class="w-1 h-4 bg-brand-accent rounded"></div>
+            <h3 class="text-[10px] font-bold text-gray-800 uppercase tracking-widest">Safety Heatmap (Last 7 Days)</h3>
+          </div>
+          <div id="s-heatmap" style="height:220px;"></div>
+        </div>
+        <!-- Safety Events Timeline — 2 cols -->
+        <div class="col-span-2 glass-panel rounded-2xl p-4 flex flex-col">
+          <div class="flex items-center space-x-2 mb-3">
+            <div class="w-1 h-4 bg-brand-accent rounded"></div>
+            <h3 class="text-[10px] font-bold text-gray-800 uppercase tracking-widest">Safety Events Timeline</h3>
+          </div>
+          <div id="s-timeline" style="flex:1;min-height:0;height:220px;"></div>
+          <p class="text-[9px] font-mono text-brand-blue cursor-pointer mt-2" onclick="comingSoon()">See All Events →</p>
+        </div>
+        <!-- Score Breakdown — 3 cols -->
+        <div class="col-span-3 glass-panel rounded-2xl p-4">
+          <div class="flex items-center space-x-2 mb-4">
+            <div class="w-1 h-4 bg-brand-accent rounded"></div>
+            <h3 class="text-[10px] font-bold text-gray-800 uppercase tracking-widest">Safety Score Breakdown</h3>
+          </div>
+          <div id="s-breakdown" style="height:220px;"></div>
+        </div>
+      </div>
+
+      <!-- ROW 4: Geofence + Risk Distribution + Performance Trend (equal height, no gaps) -->
+      <div class="grid grid-cols-12 gap-4 shrink-0">
+        <!-- Geofence Breaches — 3 cols -->
+        <div class="col-span-3 glass-panel rounded-2xl p-4 flex flex-col">
+          <div class="flex items-center space-x-2 mb-3 shrink-0">
+            <div class="w-1 h-4 bg-brand-accent rounded"></div>
+            <h3 class="text-[10px] font-bold text-gray-800 uppercase tracking-widest">Geofence Breaches</h3>
+          </div>
+          <div id="s-geofence" style="height:240px;"></div>
+        </div>
+        <!-- Risk Distribution — 5 cols -->
+        <div class="col-span-5 glass-panel rounded-2xl p-4 flex flex-col">
+          <div class="flex items-center space-x-2 mb-3 shrink-0">
+            <div class="w-1 h-4 bg-brand-accent rounded"></div>
+            <h3 class="text-[10px] font-bold text-gray-800 uppercase tracking-widest">Risk Distribution by Airspace</h3>
+          </div>
+          <div id="s-risk-dist" style="height:240px;"></div>
+        </div>
+        <!-- Vehicle Performance Trend — 4 cols (was "30-day trend") -->
+        <div class="col-span-4 glass-panel rounded-2xl p-4 flex flex-col">
+          <div class="flex items-center space-x-2 mb-3 shrink-0">
+            <div class="w-1 h-4 bg-brand-accent rounded"></div>
+            <h3 class="text-[10px] font-bold text-gray-800 uppercase tracking-widest">Vehicle Performance</h3>
+          </div>
+          <div id="s-trend-30d" style="height:240px;"></div>
+        </div>
+      </div>
+
+      <!-- ROW 5: Recommendations — full width, horizontal card layout -->
+      <div class="glass-panel rounded-2xl p-4 shrink-0">
+        <div class="flex items-center justify-between mb-3">
+          <div class="flex items-center space-x-2">
+            <div class="w-1 h-4 bg-brand-accent rounded"></div>
+            <h3 class="text-[10px] font-bold text-gray-800 uppercase tracking-widest">Safety Recommendations</h3>
+          </div>
+          <p class="text-[9px] font-mono text-brand-blue cursor-pointer" onclick="comingSoon()">View All →</p>
+        </div>
+        <div id="s-recommendations" class="grid grid-cols-4 gap-3"></div>
+      </div>
+
+    </div><!-- /safety -->
+    <!-- ═══════ FLEET PAGE ═══════ -->
+    <div class="page-panel hidden flex flex-col gap-5" data-page="fleet">
+      <!-- KPI Strip — 4 cards -->
+      <div class="grid grid-cols-4 gap-3 shrink-0">
+        <div class="glass-panel rounded-2xl p-3 flex flex-col justify-center text-center"><p class="text-3xl metric-value text-gray-800 leading-none" id="fl-kpi-total">–</p><p class="text-[0.6rem] text-gray-500 uppercase font-semibold mt-1 tracking-wide">Total Drones</p><p class="text-[9px] text-brand-success mt-1 font-mono" id="fl-kpi-total-d"><i class="fa-solid fa-caret-up"></i> vs yesterday</p></div>
+        <div class="glass-panel rounded-2xl p-3 flex flex-col justify-center text-center"><p class="text-3xl metric-value text-brand-blue leading-none" id="fl-kpi-active">–</p><p class="text-[0.6rem] text-gray-500 uppercase font-semibold mt-1 tracking-wide">Active Drones</p><p class="text-[9px] text-brand-success mt-1 font-mono"><i class="fa-solid fa-caret-up"></i> 8 vs yesterday</p></div>
+        <div class="glass-panel rounded-2xl p-3 flex flex-col justify-center text-center"><p class="text-3xl metric-value text-brand-success leading-none" id="fl-kpi-ready">–</p><p class="text-[0.6rem] text-gray-500 uppercase font-semibold mt-1 tracking-wide">Mission Ready</p><p class="text-[9px] text-brand-success mt-1 font-mono"><i class="fa-solid fa-caret-up"></i> 5 vs yesterday</p></div>
+        <div class="glass-panel rounded-2xl p-3 flex flex-col justify-center text-center"><p class="text-3xl metric-value text-brand-success leading-none" id="fl-kpi-avail">92.1%</p><p class="text-[0.6rem] text-gray-500 uppercase font-semibold mt-1 tracking-wide">Fleet Availability</p><p class="text-[9px] text-brand-success mt-1 font-mono"><i class="fa-solid fa-caret-up"></i> 3.5% vs yesterday</p></div>
+      </div>
+      <!-- ROW 2: Lifecycle flow + right sidebar -->
+      <div class="grid grid-cols-12 gap-4 shrink-0">
+        <div class="col-span-9 glass-panel rounded-2xl p-4 flex flex-col">
+          <div class="flex items-center space-x-2 mb-2 shrink-0"><div class="w-1 h-4 bg-brand-accent rounded"></div><h3 class="text-[10px] font-bold text-gray-800 uppercase tracking-widest">Fleet Lifecycle Flow <span class="text-brand-accent">(Live)</span></h3></div>
+          <div class="grid grid-cols-7 gap-2 mb-3 text-center shrink-0">
+            <div><p class="text-[8px] font-mono text-gray-400 uppercase tracking-widest">Registered</p><p class="text-lg metric-value text-gray-800" id="fl-s-reg">–</p></div>
+            <div><p class="text-[8px] font-mono text-gray-400 uppercase tracking-widest">Certified</p><p class="text-lg metric-value text-gray-800" id="fl-s-cert">–</p></div>
+            <div><p class="text-[8px] font-mono text-gray-400 uppercase tracking-widest">Mission Ready</p><p class="text-lg metric-value text-brand-success" id="fl-s-ready">–</p></div>
+            <div><p class="text-[8px] font-mono text-gray-400 uppercase tracking-widest">Active</p><p class="text-lg metric-value text-brand-blue" id="fl-s-active">–</p></div>
+            <div><p class="text-[8px] font-mono text-gray-400 uppercase tracking-widest">Returning</p><p class="text-lg metric-value text-orange-500" id="fl-s-return">–</p></div>
+            <div><p class="text-[8px] font-mono text-gray-400 uppercase tracking-widest">Charging</p><p class="text-lg metric-value text-yellow-600" id="fl-s-charge">–</p></div>
+            <div><p class="text-[8px] font-mono text-gray-400 uppercase tracking-widest">Maintenance</p><p class="text-lg metric-value text-red-500" id="fl-s-maint">–</p></div>
+          </div>
+          <div id="fl-sankey" class="flex-1 min-h-0" style="position:relative;"></div>
+          <p class="text-[8px] font-mono text-gray-400 mt-2 shrink-0"><i class="fa-solid fa-circle-info text-xs mr-1"></i>Flow represents drones transitioning between fleet states in real-time</p>
+        </div>
+        <div class="col-span-3 flex flex-col gap-3">
+          <!-- Fleet Stress Index -->
+          <div class="glass-panel rounded-2xl p-4 flex-1">
+            <div class="flex items-center space-x-2 mb-2"><div class="w-1 h-4 bg-brand-accent rounded"></div><h3 class="text-[10px] font-bold text-gray-800 uppercase tracking-widest">Fleet Stress Index</h3></div>
+            <div class="flex items-center gap-3">
+              <div class="relative flex-shrink-0" style="width:24px;height:80px;background:linear-gradient(to top,#046A38,#ff9800,#f44336);border-radius:12px;overflow:hidden;">
+                <div id="fl-stress-fill" style="position:absolute;bottom:0;left:0;width:100%;background:rgba(255,255,255,0.3);height:28%;border-radius:12px;"></div>
+              </div>
+              <div><p class="text-3xl metric-value text-gray-800">72<span class="text-base">/100</span></p><p class="text-[10px] font-bold text-orange-500">Elevated</p><p class="text-[9px] font-mono text-gray-500 mt-1">High demand on fleet resources detected</p></div>
+            </div>
+            <div id="fl-stress-spark" style="height:40px;margin-top:8px;"></div>
+          </div>
+          <!-- Fleet Availability gauge -->
+          <div class="glass-panel rounded-2xl p-4 flex-1">
+            <div class="flex items-center space-x-2 mb-2"><div class="w-1 h-4 bg-brand-accent rounded"></div><h3 class="text-[10px] font-bold text-gray-800 uppercase tracking-widest">Fleet Availability</h3></div>
+            <div id="fl-avail-gauge" style="height:110px;"></div>
+            <p class="text-[9px] font-mono text-gray-500 text-center" id="fl-avail-sub">Operational Drones: – / –</p>
+          </div>
+          <!-- Maintenance Forecast -->
+          <div class="glass-panel rounded-2xl p-4 flex-1">
+            <div class="flex items-center space-x-2 mb-2"><div class="w-1 h-4 bg-orange-400 rounded"></div><h3 class="text-[10px] font-bold text-gray-800 uppercase tracking-widest">Maintenance Forecast</h3></div>
+            <p class="text-3xl metric-value text-gray-800 mb-1" id="fl-maint-count">21</p>
+            <p class="text-[9px] font-mono text-gray-400 mb-2">Drones Due (Next 7 Days)</p>
+            <div id="fl-maint-bars" style="height:50px;"></div>
+          </div>
+        </div>
+      </div>
+      <!-- ROW 3: Heatmap + Network + Donut -->
+      <div class="grid grid-cols-3 gap-4 shrink-0">
+        <div class="glass-panel rounded-2xl p-4"><div class="flex items-center space-x-2 mb-2"><div class="w-1 h-4 bg-brand-accent rounded"></div><h3 class="text-[10px] font-bold text-gray-800 uppercase tracking-widest">Fleet Utilization Heatmap (Today)</h3></div><div id="fl-util-heatmap" style="height:220px;"></div></div>
+        <div class="glass-panel rounded-2xl p-4"><div class="flex items-center space-x-2 mb-2"><div class="w-1 h-4 bg-brand-accent rounded"></div><h3 class="text-[10px] font-bold text-gray-800 uppercase tracking-widest">Fleet State Transition Network <span class="text-brand-accent">(Live)</span></h3></div><div id="fl-network" style="height:220px;"></div><p class="text-[8px] font-mono text-gray-400 mt-1">Numbers indicate transition count (last 24h)</p></div>
+        <div class="glass-panel rounded-2xl p-4"><div class="flex items-center space-x-2 mb-2"><div class="w-1 h-4 bg-brand-accent rounded"></div><h3 class="text-[10px] font-bold text-gray-800 uppercase tracking-widest">Drone Type Mission Allocation</h3></div><div id="fl-mission-donut" style="height:220px;"></div></div>
+      </div>
+      <!-- ROW 4: Battery degradation + Readiness radar -->
+      <div class="grid grid-cols-2 gap-4 shrink-0">
+        <div class="glass-panel rounded-2xl p-4"><div class="flex items-center space-x-2 mb-2"><div class="w-1 h-4 bg-brand-accent rounded"></div><h3 class="text-[10px] font-bold text-gray-800 uppercase tracking-widest">Battery Degradation Forecast</h3></div><div id="fl-battery-forecast" style="height:220px;"></div></div>
+        <div class="glass-panel rounded-2xl p-4"><div class="flex items-center space-x-2 mb-2"><div class="w-1 h-4 bg-brand-accent rounded"></div><h3 class="text-[10px] font-bold text-gray-800 uppercase tracking-widest">Fleet Readiness Radar</h3></div><div id="fl-radar" style="height:220px;"></div></div>
+      </div>
+    </div>
+    <!-- ═══════ TEMPORAL PAGE ═══════ -->
+    <div class="page-panel hidden flex flex-col gap-5" data-page="temporal">
+
+      <!-- KPI Strip — 5 Temporal KPIs, same card style as Overview -->
+      <div class="grid grid-cols-5 gap-3 shrink-0">
+        <div class="glass-panel rounded-2xl p-3 flex flex-col justify-center text-center">
+          <p class="text-3xl metric-value text-gray-800 leading-none" id="t-kpi-missions">–</p>
+          <p class="text-[0.6rem] text-gray-500 uppercase font-semibold mt-1 tracking-wide">Missions Today</p>
+          <p class="text-[9px] text-brand-success mt-1 font-mono" id="t-kpi-missions-delta"><i class="fa-solid fa-caret-up"></i> 14% vs yesterday</p>
+        </div>
+        <div class="glass-panel rounded-2xl p-3 flex flex-col justify-center text-center">
+          <p class="text-3xl metric-value text-brand-success leading-none" id="t-kpi-hours">–</p>
+          <p class="text-[0.6rem] text-gray-500 uppercase font-semibold mt-1 tracking-wide">Flight Hours Today</p>
+          <p class="text-[9px] text-brand-success mt-1 font-mono"><i class="fa-solid fa-caret-up"></i> 11% vs yesterday</p>
+        </div>
+        <div class="glass-panel rounded-2xl p-3 flex flex-col justify-center text-center">
+          <p class="text-3xl metric-value text-brand-blue leading-none" id="t-kpi-concurrency">–</p>
+          <p class="text-[0.6rem] text-gray-500 uppercase font-semibold mt-1 tracking-wide">Peak Concurrency</p>
+          <p class="text-[9px] text-brand-success mt-1 font-mono"><i class="fa-solid fa-caret-up"></i> 6% vs yesterday</p>
+        </div>
+        <div class="glass-panel rounded-2xl p-3 flex flex-col justify-center text-center">
+          <p class="text-3xl metric-value text-orange-500 leading-none" id="t-kpi-peakwindow">16:00–18:00</p>
+          <p class="text-[0.6rem] text-gray-500 uppercase font-semibold mt-1 tracking-wide">Time Window (Peak)</p>
+          <p class="text-[9px] text-gray-400 mt-1 font-mono">Today</p>
+        </div>
+        <div class="glass-panel rounded-2xl p-3 flex flex-col justify-center text-center">
+          <p class="text-3xl metric-value text-brand-success leading-none" id="t-kpi-utilization">–</p>
+          <p class="text-[0.6rem] text-gray-500 uppercase font-semibold mt-1 tracking-wide">Airspace Utilization</p>
+          <p class="text-[9px] text-brand-success mt-1 font-mono"><i class="fa-solid fa-caret-up"></i> 5.8% vs yesterday</p>
+        </div>
+      </div>
+
+      <!-- ROW 2: Mission Activity (wide) + Temporal Insights -->
+      <div class="grid grid-cols-12 gap-4 shrink-0">
+        <!-- Mission Activity Over Time — 9 cols -->
+        <div class="col-span-9 glass-panel rounded-2xl p-4">
+          <div class="flex items-center justify-between mb-3">
+            <div class="flex items-center space-x-2">
+              <div class="w-1 h-4 bg-brand-accent rounded"></div>
+              <h3 class="text-[10px] font-bold text-gray-800 uppercase tracking-widest">Mission Activity Over Time (Today)</h3>
+            </div>
+            <!-- Time filter presets inline -->
+            <div class="flex items-center gap-1" id="t-filter-btns">
+              <button class="t-filter px-2 py-1 text-[9px] font-mono font-bold rounded border bg-brand-accent/10 border-brand-accent text-brand-accent" data-range="1d">1D</button>
+              <button class="t-filter px-2 py-1 text-[9px] font-mono font-bold rounded border border-brand-border/60 text-gray-500 hover:border-brand-accent hover:text-brand-accent transition-colors" data-range="7d">7D</button>
+              <button class="t-filter px-2 py-1 text-[9px] font-mono font-bold rounded border border-brand-border/60 text-gray-500 hover:border-brand-accent hover:text-brand-accent transition-colors" data-range="30d">30D</button>
+              <button class="t-filter px-2 py-1 text-[9px] font-mono font-bold rounded border border-brand-border/60 text-gray-500 hover:border-brand-accent hover:text-brand-accent transition-colors" data-range="custom"><i class="fa-regular fa-calendar text-[8px]"></i> Custom</button>
+            </div>
+          </div>
+          <div id="t-activity-chart" style="height:300px;"></div>
+        </div>
+        <!-- Temporal Insights — 3 cols -->
+        <div class="col-span-3 glass-panel rounded-2xl p-4 flex flex-col gap-4">
+          <div class="flex items-center space-x-2">
+            <div class="w-1 h-4 bg-brand-accent rounded"></div>
+            <h3 class="text-[10px] font-bold text-gray-800 uppercase tracking-widest">Temporal Insights</h3>
+          </div>
+          <!-- Insight cards -->
+          <div class="flex flex-col gap-3 flex-1">
+            <div class="border-b border-brand-border/40 pb-3">
+              <div class="flex items-center gap-2 mb-1"><i class="fa-regular fa-clock text-brand-blue text-sm"></i><span class="text-[9px] font-mono text-gray-500 uppercase tracking-wider">Peak Activity Window</span></div>
+              <p class="text-xl metric-value text-gray-800" id="ti-peak-window">16:00 - 18:00</p>
+              <p class="text-[9px] font-mono text-gray-400">Most concurrent flights today</p>
+            </div>
+            <div class="border-b border-brand-border/40 pb-3">
+              <div class="flex items-center gap-2 mb-1"><i class="fa-regular fa-calendar text-brand-success text-sm"></i><span class="text-[9px] font-mono text-gray-500 uppercase tracking-wider">Busiest Day (This Week)</span></div>
+              <p class="text-xl metric-value text-gray-800" id="ti-busiest-day">Thursday</p>
+              <p class="text-[9px] font-mono text-gray-400" id="ti-busiest-count">152 missions</p>
+            </div>
+            <div class="border-b border-brand-border/40 pb-3">
+              <div class="flex items-center gap-2 mb-1"><i class="fa-solid fa-arrow-trend-up text-brand-success text-sm"></i><span class="text-[9px] font-mono text-gray-500 uppercase tracking-wider">Trend (vs Yesterday)</span></div>
+              <p class="text-xl metric-value text-brand-success" id="ti-trend">+14%</p>
+              <p class="text-[9px] font-mono text-gray-400">Increase in missions</p>
+            </div>
+            <div>
+              <div class="flex items-center gap-2 mb-1"><i class="fa-solid fa-wave-square text-orange-500 text-sm"></i><span class="text-[9px] font-mono text-gray-500 uppercase tracking-wider">Avg. Daily Pattern</span></div>
+              <p class="text-xl metric-value text-gray-800" id="ti-pattern">Consistent</p>
+              <p class="text-[9px] font-mono text-gray-400">Similar to last 7 days</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ROW 3+4: merged grid — left 9 cols = 2 chart rows stacked, right 3 cols = sidebar -->
+      <div class="grid grid-cols-12 gap-4 shrink-0">
+        <!-- Top-left: Heatmap -->
+        <div class="col-span-4 glass-panel rounded-2xl p-4 flex flex-col" style="height:300px;">
+          <div class="flex items-center space-x-2 mb-2 shrink-0">
+            <div class="w-1 h-4 bg-brand-accent rounded"></div>
+            <h3 class="text-[10px] font-bold text-gray-800 uppercase tracking-widest">Collision Type × Layer Heatmap</h3>
+          </div>
+          <div id="t-heatmap" style="flex:1;min-height:0;"></div>
+        </div>
+        <!-- Top-mid: Duration -->
+        <div class="col-span-3 glass-panel rounded-2xl p-4 flex flex-col" style="height:300px;">
+          <div class="flex items-center space-x-2 mb-2 shrink-0">
+            <div class="w-1 h-4 bg-brand-accent rounded"></div>
+            <h3 class="text-[10px] font-bold text-gray-800 uppercase tracking-widest">Mission Duration Distribution</h3>
+          </div>
+          <div id="t-duration-donut" style="flex:1;min-height:0;"></div>
+          <p class="text-[9px] font-mono text-gray-400 text-center shrink-0" id="t-median-duration">Median Duration: –</p>
+        </div>
+        <!-- Top-right: Vehicle split -->
+        <div class="col-span-2 glass-panel rounded-2xl p-4 flex flex-col" style="height:300px;">
+          <div class="flex items-center space-x-2 mb-2 shrink-0">
+            <div class="w-1 h-4 bg-brand-accent rounded"></div>
+            <h3 class="text-[10px] font-bold text-gray-800 uppercase tracking-widest">Vehicle Collision Split</h3>
+          </div>
+          <div id="t-daypart" style="flex:1;min-height:0;"></div>
+        </div>
+        <!-- Right sidebar spans both rows -->
+        <div class="col-span-3 flex flex-col gap-4" style="grid-row:span 2;">
+          <div class="glass-panel rounded-2xl p-4 border-l-4 border-orange-400 flex-1">
+            <div class="flex items-center space-x-2 mb-3">
+              <div class="w-1 h-4 bg-orange-400 rounded"></div>
+              <h3 class="text-[10px] font-bold text-gray-800 uppercase tracking-widest">Upcoming Peak Alert</h3>
+            </div>
+            <div class="flex items-start gap-3 mb-2">
+              <i class="fa-regular fa-bell text-orange-500 text-lg mt-0.5"></i>
+              <div>
+                <p class="text-[9px] font-mono text-gray-500 uppercase tracking-wider mb-0.5">Next Peak Window</p>
+                <p class="text-xl metric-value text-orange-500" id="t-peak-alert-time">15:30 – 17:30</p>
+                <p class="text-[9px] font-mono text-gray-400">Today</p>
+                <span class="inline-block mt-1 text-[8px] font-bold text-orange-600 bg-orange-50 border border-orange-200 px-2 py-0.5 rounded uppercase tracking-wider">High Traffic Expected</span>
+              </div>
+            </div>
+          </div>
+          <div class="glass-panel rounded-2xl p-4 flex-1">
+            <div class="flex items-center space-x-2 mb-3">
+              <div class="w-1 h-4 bg-brand-accent rounded"></div>
+              <h3 class="text-[10px] font-bold text-gray-800 uppercase tracking-widest">Time Filter Presets</h3>
+            </div>
+            <div class="flex flex-col gap-1.5" id="t-filter-list">
+              <button class="t-filter-list-btn text-left text-[10px] font-mono text-brand-accent bg-orange-50 border border-brand-accent/40 rounded px-3 py-1.5 font-bold" data-range="1d">Today</button>
+              <button class="t-filter-list-btn text-left text-[10px] font-mono text-gray-600 hover:text-brand-accent hover:bg-orange-50 border border-brand-border/40 rounded px-3 py-1.5 transition-colors" data-range="yd">Yesterday</button>
+              <button class="t-filter-list-btn text-left text-[10px] font-mono text-gray-600 hover:text-brand-accent hover:bg-orange-50 border border-brand-border/40 rounded px-3 py-1.5 transition-colors" data-range="7d">Last 7 Days</button>
+              <button class="t-filter-list-btn text-left text-[10px] font-mono text-gray-600 hover:text-brand-accent hover:bg-orange-50 border border-brand-border/40 rounded px-3 py-1.5 transition-colors" data-range="30d">Last 30 Days</button>
+              <button class="t-filter-list-btn text-left text-[10px] font-mono text-gray-600 hover:text-brand-accent hover:bg-orange-50 border border-brand-border/40 rounded px-3 py-1.5 transition-colors" data-range="custom"><i class="fa-regular fa-calendar text-[9px] mr-1"></i>Custom Range</button>
+            </div>
+          </div>
+        </div>
+        <!-- Bottom-left: Rolling rate -->
+        <div class="col-span-4 glass-panel rounded-2xl p-4 flex flex-col" style="height:260px;">
+          <div class="flex items-center space-x-2 mb-2 shrink-0">
+            <div class="w-1 h-4 bg-brand-success rounded"></div>
+            <h3 class="text-[10px] font-bold text-gray-800 uppercase tracking-widest">Rolling Collision Rate</h3>
+          </div>
+          <div id="t-utilization" style="flex:1;min-height:0;"></div>
+        </div>
+        <!-- Bottom-mid: Severity -->
+        <div class="col-span-3 glass-panel rounded-2xl p-4 flex flex-col" style="height:260px;">
+          <div class="flex items-center space-x-2 mb-2 shrink-0">
+            <div class="w-1 h-4 bg-orange-400 rounded"></div>
+            <h3 class="text-[10px] font-bold text-gray-800 uppercase tracking-widest">Collision Severity by Tick Window</h3>
+          </div>
+          <div id="t-delay" style="flex:1;min-height:0;"></div>
+        </div>
+        <!-- Bottom-right: Airborne -->
+        <div class="col-span-2 glass-panel rounded-2xl p-4 flex flex-col" style="height:260px;">
+          <div class="flex items-center space-x-2 mb-2 shrink-0">
+            <div class="w-1 h-4 bg-red-500 rounded"></div>
+            <h3 class="text-[10px] font-bold text-gray-800 uppercase tracking-widest">Airborne vs Collisions</h3>
+          </div>
+          <div id="t-cancellations" style="flex:1;min-height:0;"></div>
+        </div>
+      </div>
+
+    </div><!-- /temporal -->
+    <!-- ═══════ PREDICTIVE PAGE ═══════ -->
+    <div class="page-panel hidden flex flex-col gap-5" data-page="predictive">
+
+      <!-- KPI Strip — 6 cards, exact same style as Overview -->
+      <div class="grid grid-cols-6 gap-3 shrink-0">
+        <div class="glass-panel rounded-2xl p-3 flex flex-col justify-center text-center">
+          <p class="text-3xl metric-value text-brand-success leading-none" id="p-kpi-accuracy">91.4%</p>
+          <p class="text-[0.6rem] text-gray-500 uppercase font-semibold mt-1 tracking-wide">Prediction Accuracy</p>
+          <p class="text-[9px] text-brand-success mt-1 font-mono"><i class="fa-solid fa-caret-up"></i> 4.7% vs last 7 days</p>
+        </div>
+        <div class="glass-panel rounded-2xl p-3 flex flex-col justify-center text-center">
+          <p class="text-3xl metric-value text-orange-500 leading-none" id="p-kpi-events">128</p>
+          <p class="text-[0.6rem] text-gray-500 uppercase font-semibold mt-1 tracking-wide">Predicted Events (7D)</p>
+          <p class="text-[9px] text-orange-400 mt-1 font-mono"><i class="fa-solid fa-caret-up"></i> 18 vs last 7 days</p>
+        </div>
+        <div class="glass-panel rounded-2xl p-3 flex flex-col justify-center text-center">
+          <p class="text-3xl metric-value text-red-500 leading-none" id="p-kpi-alerts">12</p>
+          <p class="text-[0.6rem] text-gray-500 uppercase font-semibold mt-1 tracking-wide">High Probability Alerts</p>
+          <p class="text-[9px] text-red-400 mt-1 font-mono"><i class="fa-solid fa-caret-up"></i> 3 vs last 7 days</p>
+        </div>
+        <div class="glass-panel rounded-2xl p-3 flex flex-col justify-center text-center">
+          <p class="text-3xl metric-value text-brand-blue leading-none" id="p-kpi-models">7</p>
+          <p class="text-[0.6rem] text-gray-500 uppercase font-semibold mt-1 tracking-wide">Models Active</p>
+          <p class="text-[9px] text-gray-400 mt-1 font-mono">No change</p>
+        </div>
+        <div class="glass-panel rounded-2xl p-3 flex flex-col justify-center text-center">
+          <p class="text-3xl metric-value text-gray-800 leading-none" id="p-kpi-datapoints">2.48M</p>
+          <p class="text-[0.6rem] text-gray-500 uppercase font-semibold mt-1 tracking-wide">Data Points (24H)</p>
+          <p class="text-[9px] text-brand-success mt-1 font-mono"><i class="fa-solid fa-caret-up"></i> 12.6% vs yesterday</p>
+        </div>
+        <div class="glass-panel rounded-2xl p-3 flex flex-col justify-center text-center">
+          <p class="text-3xl metric-value text-gray-800 leading-none" id="p-kpi-updated">10:12 AM</p>
+          <p class="text-[0.6rem] text-gray-500 uppercase font-semibold mt-1 tracking-wide">Last Model Update</p>
+          <p class="text-[9px] text-gray-400 mt-1 font-mono" id="p-kpi-updated-date">18 May 2025</p>
+        </div>
+      </div>
+
+      <!-- ROW 2: Predictive Overview (wide) + Summary panel -->
+      <div class="grid grid-cols-12 gap-4 shrink-0">
+        <!-- Predictive Overview — 9 cols split into 2 charts -->
+        <div class="col-span-9 glass-panel rounded-2xl p-4">
+          <div class="flex items-center space-x-2 mb-3">
+            <div class="w-1 h-4 bg-brand-accent rounded"></div>
+            <h3 class="text-[10px] font-bold text-gray-800 uppercase tracking-widest">Predictive Overview</h3>
+          </div>
+          <div class="grid grid-cols-2 gap-6" style="height:300px;">
+            <!-- Risk Forecast left -->
+            <div class="flex flex-col h-full">
+              <p class="text-[9px] font-mono text-gray-400 uppercase tracking-widest mb-1">Risk Forecast (Next 7 Days)</p>
+              <div id="p-risk-forecast" style="flex:1;min-height:0;"></div>
+            </div>
+            <!-- Demand Forecast right -->
+            <div class="flex flex-col h-full">
+              <p class="text-[9px] font-mono text-gray-400 uppercase tracking-widest mb-1">Predicted Demand (Flight Hours)</p>
+              <div id="p-demand-forecast" style="flex:1;min-height:0;"></div>
+            </div>
+          </div>
+        </div>
+        <!-- Predictive Summary — 3 cols -->
+        <div class="col-span-3 glass-panel rounded-2xl p-4 flex flex-col">
+          <div class="flex items-center space-x-2 mb-3">
+            <div class="w-1 h-4 bg-brand-accent rounded"></div>
+            <h3 class="text-[10px] font-bold text-gray-800 uppercase tracking-widest">Predictive Summary</h3>
+          </div>
+          <div class="flex flex-col gap-3 flex-1" id="p-summary-list">
+            <div class="border-b border-brand-border/40 pb-3">
+              <div class="flex items-start gap-2"><i class="fa-solid fa-triangle-exclamation text-red-500 mt-0.5 flex-shrink-0"></i>
+                <div><p class="text-[10px] font-bold text-gray-800 uppercase tracking-wide mb-0.5">High Risk Forecast</p>
+                  <p class="text-[9px] text-gray-600 leading-tight">Geofence breach probability high in Sector A3 & Research Zone R2 between 14:00–18:00 on 21 May.</p></div>
+              </div>
+            </div>
+            <div class="border-b border-brand-border/40 pb-3">
+              <div class="flex items-start gap-2"><i class="fa-regular fa-clock text-orange-500 mt-0.5 flex-shrink-0"></i>
+                <div><p class="text-[10px] font-bold text-gray-800 uppercase tracking-wide mb-0.5">Demand Surge</p>
+                  <p class="text-[9px] text-gray-600 leading-tight">Flight hours expected to increase by 42% on 21 May compared to today.</p></div>
+              </div>
+            </div>
+            <div class="border-b border-brand-border/40 pb-3">
+              <div class="flex items-start gap-2"><i class="fa-regular fa-clock text-brand-success mt-0.5 flex-shrink-0"></i>
+                <div><p class="text-[10px] font-bold text-gray-800 uppercase tracking-wide mb-0.5">Congestion Alert</p>
+                  <p class="text-[9px] text-gray-600 leading-tight">High congestion probability predicted in Sector A2 between 15:00–17:00 on 20 May.</p></div>
+              </div>
+            </div>
+            <div>
+              <div class="flex items-start gap-2"><i class="fa-regular fa-clock text-brand-blue mt-0.5 flex-shrink-0"></i>
+                <div><p class="text-[10px] font-bold text-gray-800 uppercase tracking-wide mb-0.5">Weather Impact</p>
+                  <p class="text-[9px] text-gray-600 leading-tight">Strong crosswinds predicted on 22 May may affect VTOL operations in Western Corridor.</p></div>
+              </div>
+            </div>
+          </div>
+          <p class="text-[9px] font-mono text-brand-blue cursor-pointer mt-3 pt-3 border-t border-brand-border/40" onclick="comingSoon()">View All Predictions →</p>
+        </div>
+      </div>
+
+      <!-- ROW 3: Congestion heatmap + Event probability table + Resource forecast + Model performance -->
+      <div class="grid grid-cols-12 gap-4 shrink-0">
+        <!-- Congestion heatmap — 3 cols -->
+        <div class="col-span-3 glass-panel rounded-2xl p-4">
+          <div class="flex items-center space-x-2 mb-3">
+            <div class="w-1 h-4 bg-brand-accent rounded"></div>
+            <h3 class="text-[10px] font-bold text-gray-800 uppercase tracking-widest">Congestion Probability (Tomorrow)</h3>
+          </div>
+          <div id="p-congestion-heatmap" style="height:240px;"></div>
+        </div>
+        <!-- Event probability table — 3 cols -->
+        <div class="col-span-3 glass-panel rounded-2xl p-4">
+          <div class="flex items-center space-x-2 mb-3">
+            <div class="w-1 h-4 bg-brand-accent rounded"></div>
+            <h3 class="text-[10px] font-bold text-gray-800 uppercase tracking-widest">Event Probability Forecast</h3>
+          </div>
+          <div id="p-event-table"></div>
+        </div>
+        <!-- Resource requirement bar chart — 3 cols -->
+        <div class="col-span-3 glass-panel rounded-2xl p-4">
+          <div class="flex items-center space-x-2 mb-3">
+            <div class="w-1 h-4 bg-brand-accent rounded"></div>
+            <h3 class="text-[10px] font-bold text-gray-800 uppercase tracking-widest">Resource Requirement Forecast (Next 7 Days)</h3>
+          </div>
+          <div id="p-resource-chart" style="height:240px;"></div>
+        </div>
+        <!-- Model performance table — 3 cols -->
+        <div class="col-span-3 glass-panel rounded-2xl p-4 flex flex-col">
+          <div class="flex items-center space-x-2 mb-3">
+            <div class="w-1 h-4 bg-brand-accent rounded"></div>
+            <h3 class="text-[10px] font-bold text-gray-800 uppercase tracking-widest">Model Performance</h3>
+          </div>
+          <div id="p-model-table" class="flex-1 overflow-y-auto scrollbar-hide"></div>
+          <p class="text-[9px] font-mono text-brand-blue cursor-pointer mt-3 pt-3 border-t border-brand-border/40" onclick="comingSoon()">View All Models →</p>
+        </div>
+      </div>
+
+      <!-- ROW 4: Scenario Simulator -->
+      <div class="glass-panel rounded-2xl p-4 shrink-0">
+        <div class="flex items-center space-x-2 mb-4">
+          <div class="w-1 h-4 bg-brand-accent rounded"></div>
+          <h3 class="text-[10px] font-bold text-gray-800 uppercase tracking-widest">Predictive Scenario Simulator</h3>
+        </div>
+        <div class="grid grid-cols-2 gap-8">
+          <!-- Parameters left -->
+          <div>
+            <p class="text-[9px] font-mono text-gray-400 uppercase tracking-widest mb-3">Select Scenario Parameters</p>
+            <div class="grid grid-cols-3 gap-3 mb-4">
+              <div>
+                <label class="block text-[8px] font-mono text-gray-400 uppercase tracking-widest mb-1">Altitude Layer</label>
+                <select id="sim-layer" class="w-full text-[10px] font-mono bg-white border border-brand-border rounded-lg px-2 py-1.5 text-gray-700 focus:ring-1 focus:ring-brand-accent outline-none">
+                  <option value="all">All Layers</option>
+                  <option value="1">L1 — 0m</option>
+                  <option value="2">L2 — 50m</option>
+                  <option value="3">L3 — 100m</option>
+                  <option value="4">L4 — 150m+</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-[8px] font-mono text-gray-400 uppercase tracking-widest mb-1">Vehicle Type</label>
+                <select id="sim-vehicle" class="w-full text-[10px] font-mono bg-white border border-brand-border rounded-lg px-2 py-1.5 text-gray-700 focus:ring-1 focus:ring-brand-accent outline-none">
+                  <option value="all">All Types</option>
+                  <option value="Quad">Quad</option>
+                  <option value="Hexa">Hexa</option>
+                  <option value="Octa">Octa</option>
+                  <option value="Vtol">Vtol</option>
+                  <option value="Fixed_Wing">Fixed Wing</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-[8px] font-mono text-gray-400 uppercase tracking-widest mb-1">Risk Tier</label>
+                <select id="sim-risk-thresh" class="w-full text-[10px] font-mono bg-white border border-brand-border rounded-lg px-2 py-1.5 text-gray-700 focus:ring-1 focus:ring-brand-accent outline-none">
+                  <option value="all">All Tiers</option>
+                  <option value="High">High Risk</option>
+                  <option value="Medium">Medium Risk</option>
+                  <option value="Low">Low Risk</option>
+                </select>
+              </div>
+            </div>
+            <button id="sim-run-btn" class="px-5 py-2 bg-brand-accent hover:bg-orange-600 text-white font-bold text-[11px] tracking-widest uppercase rounded-xl transition-colors flex items-center gap-2">
+              <i class="fa-solid fa-play text-[9px]"></i> Run Simulation
+            </button>
+            <p id="sim-filter-info" class="text-[8px] font-mono text-gray-400 mt-2"></p>
+          </div>
+          <!-- Outcomes right -->
+          <div>
+            <p class="text-[9px] font-mono text-gray-400 uppercase tracking-widest mb-3">Simulation Outcomes</p>
+            <div class="grid grid-cols-5 gap-3 items-start" id="sim-outcomes">
+              <!-- Overall Risk gauge -->
+              <div class="col-span-1 flex flex-col items-center">
+                <div id="sim-gauge" style="width:90px;height:90px;"></div>
+                <p class="text-[9px] font-mono text-gray-500 text-center mt-1" id="sim-risk-label">Moderate</p>
+              </div>
+              <!-- Metric cards -->
+              <div class="col-span-4 grid grid-cols-4 gap-3">
+                <div class="text-center glass-panel rounded-xl p-2">
+                  <p class="text-[8px] font-mono text-gray-400 uppercase tracking-wider mb-1">Total Analyzed</p>
+                  <p class="text-2xl metric-value text-gray-800 leading-none" id="sim-missions">—</p>
+                  <p class="text-[8px] font-mono text-gray-400 mt-0.5" id="sim-missions-delta">drones</p>
+                </div>
+                <div class="text-center glass-panel rounded-xl p-2">
+                  <p class="text-[8px] font-mono text-gray-400 uppercase tracking-wider mb-1">High Risk</p>
+                  <p class="text-2xl metric-value text-red-500 leading-none" id="sim-alerts">—</p>
+                  <p class="text-[8px] font-mono text-red-400 mt-0.5" id="sim-alerts-delta">of fleet</p>
+                </div>
+                <div class="text-center glass-panel rounded-xl p-2">
+                  <p class="text-[8px] font-mono text-gray-400 uppercase tracking-wider mb-1">Anomalies</p>
+                  <p class="text-2xl metric-value text-orange-500 leading-none" id="sim-peak">—</p>
+                  <p class="text-[8px] font-mono text-gray-400 mt-0.5">detected</p>
+                </div>
+                <div class="text-center glass-panel rounded-xl p-2">
+                  <p class="text-[8px] font-mono text-gray-400 uppercase tracking-wider mb-1">Accuracy</p>
+                  <p class="text-2xl metric-value text-brand-success leading-none" id="sim-confidence">—</p>
+                  <p class="text-[8px] font-mono text-gray-400 mt-0.5" id="sim-risk-label2">model</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Footer disclaimer -->
+      <p class="text-[9px] font-mono text-gray-400 text-center pb-1 shrink-0">
+        <i class="fa-solid fa-shield-halved mr-1"></i>
+        Predictions are based on historical data and real-time inputs. Actual outcomes may vary.
+      </p>
+
+    </div><!-- /predictive -->
+    <!-- ═══════ ALGORITHM PAGE ═══════ -->
+    <div class="page-panel hidden flex flex-col gap-5" data-page="algo">
+      <!-- KPI Strip -->
+      <div class="grid grid-cols-6 gap-3 shrink-0">
+        <div class="glass-panel rounded-2xl p-3 text-center"><p class="text-3xl metric-value text-brand-blue leading-none" id="al-kpi-models">12</p><p class="text-[0.6rem] text-gray-500 uppercase font-semibold mt-1 tracking-wide">Active Models</p><p class="text-[9px] text-brand-success mt-1 font-mono"><i class="fa-solid fa-caret-up"></i> 2 vs yesterday</p></div>
+        <div class="glass-panel rounded-2xl p-3 text-center"><p class="text-3xl metric-value text-gray-800 leading-none" id="al-kpi-infer">2.48M</p><p class="text-[0.6rem] text-gray-500 uppercase font-semibold mt-1 tracking-wide">Total Inferences Today</p><p class="text-[9px] text-brand-success mt-1 font-mono"><i class="fa-solid fa-caret-up"></i> 18.6% vs yesterday</p></div>
+        <div class="glass-panel rounded-2xl p-3 text-center"><p class="text-3xl metric-value text-orange-500 leading-none" id="al-kpi-latency">32 ms</p><p class="text-[0.6rem] text-gray-500 uppercase font-semibold mt-1 tracking-wide">Avg. Inference Time</p><p class="text-[9px] text-brand-success mt-1 font-mono"><i class="fa-solid fa-caret-down"></i> 8% vs yesterday</p></div>
+        <div class="glass-panel rounded-2xl p-3 text-center"><p class="text-3xl metric-value text-brand-success leading-none" id="al-kpi-acc">91.3%</p><p class="text-[0.6rem] text-gray-500 uppercase font-semibold mt-1 tracking-wide">Model Accuracy Avg.</p><p class="text-[9px] text-brand-success mt-1 font-mono"><i class="fa-solid fa-caret-up"></i> 2.7% vs yesterday</p></div>
+        <div class="glass-panel rounded-2xl p-3 text-center"><p class="text-3xl metric-value text-orange-500 leading-none" id="al-kpi-drift">2</p><p class="text-[0.6rem] text-gray-500 uppercase font-semibold mt-1 tracking-wide">Drift Detected</p><p class="text-[9px] text-brand-success mt-1 font-mono"><i class="fa-solid fa-caret-down"></i> 1 vs yesterday</p></div>
+        <div class="glass-panel rounded-2xl p-3 text-center"><p class="text-3xl metric-value text-gray-800 leading-none" id="al-kpi-updated">10:12 AM</p><p class="text-[0.6rem] text-gray-500 uppercase font-semibold mt-1 tracking-wide">Last Model Update</p><p class="text-[9px] text-gray-400 mt-1 font-mono">18 May 2025</p></div>
+      </div>
+      <!-- ROW 2: Model performance + Algorithm health + right sidebar -->
+      <div class="grid grid-cols-12 gap-4" style="min-height:420px;">
+        <!-- Model Performance Overview — 7 cols -->
+        <div class="col-span-7 glass-panel rounded-2xl p-4 flex flex-col">
+          <div class="flex items-center justify-between mb-3 shrink-0"><div class="flex items-center space-x-2"><div class="w-1 h-4 bg-brand-accent rounded"></div><h3 class="text-[10px] font-bold text-gray-800 uppercase tracking-widest">Model Performance Overview (Across All Models)</h3></div><select class="text-[9px] font-mono bg-white border border-brand-border rounded px-2 py-1 outline-none text-gray-600"><option>All Models</option></select></div>
+          <div class="grid grid-cols-2 gap-4 flex-1 min-h-0">
+            <div class="flex flex-col min-h-0"><p class="text-[9px] font-mono text-gray-400 uppercase tracking-widest mb-1 shrink-0">Route Assignment (Avg Distance vs Crash %)</p><div id="al-accuracy-time" class="flex-1 min-h-0" style="position:relative;"></div></div>
+            <div class="flex flex-col min-h-0"><p class="text-[9px] font-mono text-gray-400 uppercase tracking-widest mb-1 shrink-0">Route Length: Crashed vs Safe Distribution</p><div id="al-latency-dist" class="flex-1 min-h-0" style="position:relative;"></div></div>
+          </div>
+        </div>
+        <!-- Algorithm Health — 2 cols -->
+        <div class="col-span-2 glass-panel rounded-2xl p-4 flex flex-col">
+          <div class="flex items-center space-x-2 mb-3 shrink-0"><div class="w-1 h-4 bg-brand-accent rounded"></div><h3 class="text-[10px] font-bold text-gray-800 uppercase tracking-widest">Algorithm Health</h3></div>
+          <div id="al-health-gauge" style="height:140px;" class="shrink-0"></div>
+          <div class="space-y-3 mt-3 flex-1" id="al-health-bars"></div>
+          <p class="text-[9px] font-mono text-brand-success mt-3 shrink-0"><i class="fa-solid fa-circle text-[7px]"></i> Overall Status: Good</p>
+        </div>
+        <!-- Right sidebar — 3 cols -->
+        <div class="col-span-3 flex flex-col gap-3" style="min-height:420px;">
+          <div class="glass-panel rounded-2xl p-4 flex-1">
+            <div class="flex items-center space-x-2 mb-2"><div class="w-1 h-4 bg-brand-accent rounded"></div><h3 class="text-[10px] font-bold text-gray-800 uppercase tracking-widest">Recent Model Updates</h3></div>
+            <div class="space-y-2 text-[9px]">
+              <div class="flex items-center justify-between border-b border-brand-border/40 pb-1.5"><div><p class="font-bold text-gray-800">Risk Prediction Model v3.2</p><p class="font-mono text-gray-400">Updated: 18 May 2025, 10:12 AM</p></div><span class="text-[7px] font-bold bg-brand-success text-white px-1.5 py-0.5 rounded">Deployed</span></div>
+              <div class="flex items-center justify-between border-b border-brand-border/40 pb-1.5"><div><p class="font-bold text-gray-800">Demand Forecasting v2.7</p><p class="font-mono text-gray-400">Updated: 18 May 2025, 08:45 AM</p></div><span class="text-[7px] font-bold bg-brand-success text-white px-1.5 py-0.5 rounded">Deployed</span></div>
+              <div class="flex items-center justify-between border-b border-brand-border/40 pb-1.5"><div><p class="font-bold text-gray-800">Anomaly Detection v1.9</p><p class="font-mono text-gray-400">Updated: 17 May 2025, 11:30 PM</p></div><span class="text-[7px] font-bold bg-brand-success text-white px-1.5 py-0.5 rounded">Deployed</span></div>
+              <div class="flex items-center justify-between"><div><p class="font-bold text-gray-800">Trajectory Prediction v4.1</p><p class="font-mono text-gray-400">Updated: 17 May 2025, 06:20 PM</p></div><span class="text-[7px] font-bold bg-brand-blue text-white px-1.5 py-0.5 rounded">Validated</span></div>
+            </div>
+            <p class="text-[9px] font-mono text-brand-blue mt-3 pt-2 border-t border-brand-border/40 cursor-pointer" onclick="comingSoon()">View All Updates →</p>
+          </div>
+          <div class="glass-panel rounded-2xl p-4 flex-1">
+            <div class="flex items-center space-x-2 mb-2"><div class="w-1 h-4 bg-brand-accent rounded"></div><h3 class="text-[10px] font-bold text-gray-800 uppercase tracking-widest">Algorithm Activity Feed</h3></div>
+            <div class="space-y-2 text-[9px] flex-1 overflow-y-auto scrollbar-hide">
+              <div class="flex items-start gap-2 border-b border-brand-border/30 pb-1.5"><i class="fa-solid fa-circle-exclamation text-orange-500 text-xs flex-shrink-0 mt-0.5"></i><div class="flex-1 min-w-0"><p class="text-gray-700 leading-tight">High congestion probability detected in Sector A2</p></div><span class="font-mono text-gray-400 flex-shrink-0">10:23 AM</span></div>
+              <div class="flex items-start gap-2 border-b border-brand-border/30 pb-1.5"><i class="fa-solid fa-triangle-exclamation text-yellow-500 text-xs flex-shrink-0 mt-0.5"></i><div class="flex-1 min-w-0"><p class="text-gray-700 leading-tight">Model drift detected in Conflict Detection Model</p></div><span class="font-mono text-gray-400 flex-shrink-0">10:18 AM</span></div>
+              <div class="flex items-start gap-2 border-b border-brand-border/30 pb-1.5"><i class="fa-solid fa-chart-line text-brand-blue text-xs flex-shrink-0 mt-0.5"></i><div class="flex-1 min-w-0"><p class="text-gray-700 leading-tight">Risk spike predicted in Zone R2 (14:00–18:00)</p></div><span class="font-mono text-gray-400 flex-shrink-0">10:15 AM</span></div>
+              <div class="flex items-start gap-2 border-b border-brand-border/30 pb-1.5"><i class="fa-solid fa-check-circle text-brand-success text-xs flex-shrink-0 mt-0.5"></i><div class="flex-1 min-w-0"><p class="text-gray-700 leading-tight">New data batch processed successfully</p></div><span class="font-mono text-gray-400 flex-shrink-0">10:10 AM</span></div>
+              <div class="flex items-start gap-2"><i class="fa-solid fa-rotate text-purple-500 text-xs flex-shrink-0 mt-0.5"></i><div class="flex-1 min-w-0"><p class="text-gray-700 leading-tight">Model retraining completed for Risk Prediction</p></div><span class="font-mono text-gray-400 flex-shrink-0">09:58 AM</span></div>
+            </div>
+            <p class="text-[9px] font-mono text-brand-blue mt-2 pt-2 border-t border-brand-border/40 cursor-pointer" onclick="comingSoon()">View All Activity →</p>
+          </div>
+        </div>
+      </div>
+      <!-- ROW 3: Accuracy comparison + Drift + Usage donut -->
+      <div class="grid grid-cols-3 gap-4 shrink-0">
+        <div class="glass-panel rounded-2xl p-4"><div class="flex items-center space-x-2 mb-2"><div class="w-1 h-4 bg-brand-accent rounded"></div><h3 class="text-[10px] font-bold text-gray-800 uppercase tracking-widest">Model Accuracy Comparison</h3></div><div id="al-acc-comparison" style="height:220px;"></div></div>
+        <div class="glass-panel rounded-2xl p-4"><div class="flex items-center space-x-2 mb-2"><div class="w-1 h-4 bg-orange-400 rounded"></div><h3 class="text-[10px] font-bold text-gray-800 uppercase tracking-widest">Data Drift Monitoring</h3></div><div id="al-drift" style="height:220px;"></div></div>
+        <div class="glass-panel rounded-2xl p-4"><div class="flex items-center space-x-2 mb-2"><div class="w-1 h-4 bg-brand-accent rounded"></div><h3 class="text-[10px] font-bold text-gray-800 uppercase tracking-widest">Model Usage Distribution (Today)</h3></div><div id="al-usage-donut" style="height:220px;"></div></div>
+      </div>
+      <!-- ROW 4: Feature importance + Bias + Resource utilization -->
+      <div class="grid grid-cols-3 gap-4 shrink-0">
+        <div class="glass-panel rounded-2xl p-4"><div class="flex items-center space-x-2 mb-2"><div class="w-1 h-4 bg-brand-blue rounded"></div><h3 class="text-[10px] font-bold text-gray-800 uppercase tracking-widest">Feature Importance (Top 10) — Risk Prediction</h3></div><div id="al-features" style="height:220px;"></div></div>
+        <div class="glass-panel rounded-2xl p-4">
+          <div class="flex items-center space-x-2 mb-3"><div class="w-1 h-4 bg-brand-accent rounded"></div><h3 class="text-[10px] font-bold text-gray-800 uppercase tracking-widest">Bias &amp; Fairness Monitoring</h3></div>
+          <div class="grid grid-cols-3 gap-3" id="al-bias-cards"></div>
+          <p class="text-[8px] font-mono text-brand-success mt-3"><i class="fa-solid fa-circle-info text-xs mr-1"></i>No significant bias detected across monitored groups.</p>
+        </div>
+        <div class="glass-panel rounded-2xl p-4"><div class="flex items-center space-x-2 mb-2"><div class="w-1 h-4 bg-brand-accent rounded"></div><h3 class="text-[10px] font-bold text-gray-800 uppercase tracking-widest">Algorithm Resource Utilization (Today)</h3></div><div id="al-resources" style="height:220px;"></div></div>
+      </div>
+      <p class="text-[9px] font-mono text-gray-400 text-center pb-1 shrink-0"><i class="fa-solid fa-shield-halved mr-1"></i>All algorithms are continuously monitored. Predictions are based on historical data and real-time inputs. Actual outcomes may vary.</p>
+    </div>
+    <!-- ═══════ INTEL PAGE ═══════ -->
+    <div class="page-panel hidden flex flex-col gap-5" data-page="intel">
+      <!-- KPI Strip -->
+      <div class="grid grid-cols-6 gap-3 shrink-0">
+        <div class="glass-panel rounded-2xl p-3 text-center"><p class="text-3xl metric-value text-brand-success leading-none" id="in-kpi-score">—</p><p class="text-[0.6rem] text-gray-500 uppercase font-semibold mt-1 tracking-wide">Intel Score</p><p class="text-[9px] text-brand-success mt-1 font-mono" id="in-kpi-score-d">Good</p></div>
+        <div class="glass-panel rounded-2xl p-3 text-center"><p class="text-3xl metric-value text-red-500 leading-none" id="in-kpi-highrisk">—</p><p class="text-[0.6rem] text-gray-500 uppercase font-semibold mt-1 tracking-wide">High Risk Drones</p><p class="text-[9px] text-red-400 mt-1 font-mono" id="in-kpi-highrisk-d">across trials</p></div>
+        <div class="glass-panel rounded-2xl p-3 text-center"><p class="text-3xl metric-value text-brand-blue leading-none" id="in-kpi-trials">—</p><p class="text-[0.6rem] text-gray-500 uppercase font-semibold mt-1 tracking-wide">Trials Monitored</p><p class="text-[9px] text-gray-400 mt-1 font-mono" id="in-kpi-trials-d">loaded</p></div>
+        <div class="glass-panel rounded-2xl p-3 text-center"><p class="text-3xl metric-value text-gray-800 leading-none" id="in-kpi-fleet">—</p><p class="text-[0.6rem] text-gray-500 uppercase font-semibold mt-1 tracking-wide">Total Fleet</p><p class="text-[9px] text-brand-success mt-1 font-mono" id="in-kpi-fleet-d">drones analyzed</p></div>
+        <div class="glass-panel rounded-2xl p-3 text-center"><p class="text-3xl metric-value text-brand-success leading-none" id="in-kpi-conf">—</p><p class="text-[0.6rem] text-gray-500 uppercase font-semibold mt-1 tracking-wide">Avg Completion</p><p class="text-[9px] text-brand-success mt-1 font-mono" id="in-kpi-conf-d">data confidence</p></div>
+        <div class="glass-panel rounded-2xl p-3 text-center"><p class="text-3xl metric-value text-gray-800 leading-none" id="in-kpi-updated">—</p><p class="text-[0.6rem] text-gray-500 uppercase font-semibold mt-1 tracking-wide">Last Update</p><p class="text-[9px] text-gray-400 mt-1 font-mono" id="in-kpi-updated-d">today</p></div>
+      </div>
+      <!-- ROW 2: Map + Threat Summary + Critical Alerts -->
+      <div class="grid grid-cols-12 gap-4 shrink-0">
+        <!-- Geospatial Intel Map — 6 cols -->
+        <div class="col-span-6 glass-panel rounded-2xl flex flex-col overflow-hidden" style="height:400px;">
+          <div class="p-3 flex items-center space-x-2 shrink-0"><div class="w-1 h-4 bg-brand-blue rounded"></div><h3 class="text-[10px] font-bold text-gray-800 uppercase tracking-widest">Geospatial Intelligence Overview</h3></div>
+          <div class="flex-1 relative overflow-hidden rounded-xl mx-2 mb-2">
+            <div id="in-leaflet-wrap" class="absolute inset-0" style="background:#0a1628;">
+              <div id="in-leaflet-map" style="width:100%;height:100%;z-index:1;"></div>
+              <!-- Layer panel — vehicle type toggles that change circle sizes -->
+              <div class="absolute left-3 top-3 z-[500] bg-white/95 backdrop-blur-sm rounded-xl shadow-lg border border-white/60 p-3" style="width:160px;">
+                <p class="text-[8px] font-bold text-gray-500 mb-2 tracking-widest uppercase">Filter by Vehicle</p>
+                <div class="flex flex-wrap gap-1 mb-2" id="in-veh-btns">
+                  <button class="in-veh-btn active px-2 py-1 rounded text-[8px] font-bold font-mono border transition-all bg-brand-accent text-white border-brand-accent" data-veh="all">ALL</button>
+                  <button class="in-veh-btn px-2 py-1 rounded text-[8px] font-bold font-mono border transition-all bg-white text-gray-600 border-gray-300 hover:border-brand-accent hover:text-brand-accent" data-veh="Quad">Quad</button>
+                  <button class="in-veh-btn px-2 py-1 rounded text-[8px] font-bold font-mono border transition-all bg-white text-gray-600 border-gray-300 hover:border-brand-accent hover:text-brand-accent" data-veh="Hexa">Hexa</button>
+                  <button class="in-veh-btn px-2 py-1 rounded text-[8px] font-bold font-mono border transition-all bg-white text-gray-600 border-gray-300 hover:border-brand-accent hover:text-brand-accent" data-veh="Vtol">Vtol</button>
+                  <button class="in-veh-btn px-2 py-1 rounded text-[8px] font-bold font-mono border transition-all bg-white text-gray-600 border-gray-300 hover:border-brand-accent hover:text-brand-accent" data-veh="Fixed_Wing">FWing</button>
+                  <button class="in-veh-btn px-2 py-1 rounded text-[8px] font-bold font-mono border transition-all bg-white text-gray-600 border-gray-300 hover:border-brand-accent hover:text-brand-accent" data-veh="Octa">Octa</button>
+                </div>
+                <div class="border-t border-brand-border/40 pt-2">
+                  <p class="text-[8px] font-bold text-gray-500 tracking-widest uppercase mb-1">Colour By</p>
+                  <div class="flex flex-col gap-1">
+                    <label class="flex items-center gap-2 cursor-pointer"><input type="radio" name="in-colour-mode" value="collision" checked class="w-3 h-3 accent-brand-accent"><span class="text-[9px] text-gray-700">Crash Rate</span></label>
+                    <label class="flex items-center gap-2 cursor-pointer"><input type="radio" name="in-colour-mode" value="completion" class="w-3 h-3 accent-brand-success"><span class="text-[9px] text-gray-700">Completion %</span></label>
+                    <label class="flex items-center gap-2 cursor-pointer"><input type="radio" name="in-colour-mode" value="highrisk" class="w-3 h-3 accent-blue-500"><span class="text-[9px] text-gray-700">High-Risk %</span></label>
+                  </div>
+                </div>
+                <p class="text-[7.5px] font-mono text-gray-400 mt-2 pt-1 border-t border-brand-border/30">Circle size = fleet</p>
+              </div>
+              <div class="absolute bottom-2 right-3 z-[500]"><p class="text-[8px] font-mono text-white/70" id="in-map-ts">Updated: 10:12 AM IST</p></div>
+            </div>
+          </div>
+        </div>
+        <!-- Threat Summary — 3 cols -->
+        <div class="col-span-3 glass-panel rounded-2xl p-4 flex flex-col">
+          <div class="flex items-center space-x-2 mb-2"><div class="w-1 h-4 bg-red-500 rounded"></div><h3 class="text-[10px] font-bold text-gray-800 uppercase tracking-widest">Threat Summary (Today)</h3></div>
+          <div id="in-threat-donut" style="height:140px;"></div>
+          <div class="flex flex-col gap-2 flex-1 mt-2">
+            <div class="border border-red-200 bg-red-50/30 rounded-lg p-2"><div class="flex justify-between mb-0.5"><span class="text-[9px] font-bold text-gray-800">Unauthorized Drone Activity</span><span class="text-[8px] font-bold text-red-600">High</span></div><p class="text-[8px] font-mono text-gray-500">Sector A3 · 09:48 AM</p><p class="text-[8px] text-gray-500 leading-tight">Near restricted research zone</p></div>
+            <div class="border border-orange-200 bg-orange-50/30 rounded-lg p-2"><div class="flex justify-between mb-0.5"><span class="text-[9px] font-bold text-gray-800">Signal Interference</span><span class="text-[8px] font-bold text-orange-600">Medium</span></div><p class="text-[8px] font-mono text-gray-500">Sector B1 · 09:21 AM</p><p class="text-[8px] text-gray-500 leading-tight">Intermittent GPS spoofing detected</p></div>
+            <div class="border border-orange-200 bg-orange-50/30 rounded-lg p-2"><div class="flex justify-between mb-0.5"><span class="text-[9px] font-bold text-gray-800">No-Fly Zone Violation</span><span class="text-[8px] font-bold text-orange-600">Medium</span></div><p class="text-[8px] font-mono text-gray-500">Sector R2 · 08:57 AM</p><p class="text-[8px] text-gray-500 leading-tight">Drone crossed boundary for 18s</p></div>
+          </div>
+          <p class="text-[9px] font-mono text-brand-blue mt-2 pt-2 border-t border-brand-border/40 cursor-pointer" onclick="comingSoon()">View All Threats →</p>
+        </div>
+        <!-- Critical Alerts — 3 cols -->
+        <div class="col-span-3 glass-panel rounded-2xl p-4 flex flex-col">
+          <div class="flex items-center justify-between mb-3"><div class="flex items-center space-x-2"><div class="w-1 h-4 bg-red-500 rounded"></div><h3 class="text-[10px] font-bold text-gray-800 uppercase tracking-widest">Critical Intelligence Alerts</h3></div><span class="text-[9px] font-mono text-brand-blue cursor-pointer" onclick="comingSoon()">View All (3)</span></div>
+          <div class="flex flex-col gap-3 flex-1">
+            <div class="border border-red-200 bg-red-50/40 rounded-xl p-3"><div class="flex justify-between items-start mb-1"><span class="text-[10px] font-bold text-red-700 uppercase tracking-wide">Potential Intrusion</span><span class="text-[7px] font-bold bg-red-500 text-white px-1.5 py-0.5 rounded uppercase">Critical</span></div><p class="text-[9px] text-gray-600 leading-tight mb-1">Unknown drone identified entering Research Zone R2</p><span class="text-[8px] font-mono text-gray-400">10:12 AM</span></div>
+            <div class="border border-orange-200 bg-orange-50/40 rounded-xl p-3"><div class="flex justify-between items-start mb-1"><span class="text-[10px] font-bold text-orange-700 uppercase tracking-wide">Suspected Jamming Source</span><span class="text-[7px] font-bold bg-orange-500 text-white px-1.5 py-0.5 rounded uppercase">High</span></div><p class="text-[9px] text-gray-600 leading-tight mb-1">Possible RF jamming detected in Sector B1 (118.5 MHz)</p><span class="text-[8px] font-mono text-gray-400">09:55 AM</span></div>
+            <div class="border border-blue-200 bg-blue-50/40 rounded-xl p-3"><div class="flex justify-between items-start mb-1"><span class="text-[10px] font-bold text-brand-blue uppercase tracking-wide">Unusual Pattern Detected</span><span class="text-[7px] font-bold bg-brand-blue text-white px-1.5 py-0.5 rounded uppercase">Medium</span></div><p class="text-[9px] text-gray-600 leading-tight mb-1">Abnormal swarm behavior observed near Powai Lake</p><span class="text-[8px] font-mono text-gray-400">09:31 AM</span></div>
+          </div>
+        </div>
+      </div>
+      <!-- ROW 3+4: merged — left 9 cols = charts top+bottom, right 3 cols = feed/watchlist spanning both -->
+      <div class="grid grid-cols-12 gap-4 shrink-0">
+        <!-- Top row charts -->
+        <div class="col-span-2 glass-panel rounded-2xl p-4 flex flex-col" style="height:260px;"><div class="flex items-center space-x-2 mb-2 shrink-0"><div class="w-1 h-4 bg-brand-accent rounded"></div><h3 class="text-[10px] font-bold text-gray-800 uppercase tracking-widest">Signals Intelligence</h3></div><div id="in-sigint-donut" style="flex:1;min-height:0;"></div></div>
+        <div class="col-span-4 glass-panel rounded-2xl p-4 flex flex-col" style="height:260px;">
+          <div class="flex items-center space-x-2 mb-2 shrink-0"><div class="w-1 h-4 bg-brand-accent rounded"></div><h3 class="text-[10px] font-bold text-gray-800 uppercase tracking-widest">Situational Awareness Timeline</h3></div>
+          <div id="in-timeline" style="flex:1;min-height:0;"></div>
+        </div>
+        <div class="col-span-3 glass-panel rounded-2xl p-4 flex flex-col" style="height:260px;"><div class="flex items-center space-x-2 mb-2 shrink-0"><div class="w-1 h-4 bg-brand-accent rounded"></div><h3 class="text-[10px] font-bold text-gray-800 uppercase tracking-widest">Intel Sources Health</h3></div><div id="in-sources-health" class="space-y-2 flex-1 min-h-0 overflow-auto"></div><p class="text-[9px] font-mono text-brand-success mt-2 shrink-0"><i class="fa-solid fa-circle text-[7px]"></i> Overall Source Reliability: Good</p></div>
+        <!-- Right sidebar spans both rows -->
+        <div class="col-span-3 flex flex-col gap-3" style="grid-row:span 2;">
+          <div class="glass-panel rounded-2xl p-3 flex-1">
+            <div class="flex items-center justify-between mb-2"><div class="flex items-center space-x-2"><div class="w-1 h-4 bg-brand-accent rounded"></div><h3 class="text-[10px] font-bold text-gray-800 uppercase tracking-widest">Intelligence Feed (Live)</h3></div><span class="text-[9px] font-mono text-brand-blue cursor-pointer" onclick="comingSoon()">View All</span></div>
+            <div class="space-y-1.5" id="in-feed">
+              <div class="flex items-center gap-2 text-[9px]"><div class="w-2 h-2 rounded-full bg-brand-blue flex-shrink-0"></div><span class="text-gray-700 flex-1 leading-tight">New drone signature detected in Sector A1</span><span class="font-mono text-gray-400 flex-shrink-0">10:10 AM</span></div>
+              <div class="flex items-center gap-2 text-[9px]"><div class="w-2 h-2 rounded-full bg-brand-success flex-shrink-0"></div><span class="text-gray-700 flex-1 leading-tight">Satellite pass completed over Mumbai region</span><span class="font-mono text-gray-400 flex-shrink-0">10:08 AM</span></div>
+              <div class="flex items-center gap-2 text-[9px]"><div class="w-2 h-2 rounded-full bg-red-500 flex-shrink-0"></div><span class="text-gray-700 flex-1 leading-tight">SIGINT intercept: Encrypted comms detected</span><span class="font-mono text-gray-400 flex-shrink-0">10:05 AM</span></div>
+              <div class="flex items-center gap-2 text-[9px]"><div class="w-2 h-2 rounded-full bg-brand-success flex-shrink-0"></div><span class="text-gray-700 flex-1 leading-tight">Weather update received from IMD</span><span class="font-mono text-gray-400 flex-shrink-0">10:03 AM</span></div>
+              <div class="flex items-center gap-2 text-[9px]"><div class="w-2 h-2 rounded-full bg-orange-500 flex-shrink-0"></div><span class="text-gray-700 flex-1 leading-tight">Flight plan deviation alert in Corridor 3</span><span class="font-mono text-gray-400 flex-shrink-0">10:01 AM</span></div>
+            </div>
+          </div>
+          <div class="glass-panel rounded-2xl p-3 flex-1">
+            <div class="flex items-center justify-between mb-2"><div class="flex items-center space-x-2"><div class="w-1 h-4 bg-brand-accent rounded"></div><h3 class="text-[10px] font-bold text-gray-800 uppercase tracking-widest">Watchlist (Today)</h3></div><span class="text-[9px] font-mono text-brand-blue cursor-pointer" onclick="comingSoon()">View All</span></div>
+            <div class="space-y-2 text-[9px]">
+              <div class="flex items-start justify-between border-b border-brand-border/30 pb-1.5"><div><p class="font-bold text-gray-800">Unknown Drone ID: UTM-4587</p><p class="font-mono text-gray-400">First seen: 09:35 AM · Sector A2</p></div><span class="text-[7px] font-bold bg-brand-blue text-white px-1.5 py-0.5 rounded">Monitoring</span></div>
+              <div class="flex items-start justify-between border-b border-brand-border/30 pb-1.5"><div><p class="font-bold text-gray-800">Registration: NA-32-BQ</p><p class="font-mono text-gray-400">No operator identification · Sector R2</p></div><span class="text-[7px] font-bold bg-orange-500 text-white px-1.5 py-0.5 rounded">Suspected</span></div>
+              <div class="flex items-start justify-between"><div><p class="font-bold text-gray-800">Device Signature: RF-9812</p><p class="font-mono text-gray-400">Validated · No threat · Sector C1</p></div><span class="text-[7px] font-bold bg-brand-success text-white px-1.5 py-0.5 rounded">Cleared</span></div>
+            </div>
+          </div>
+        </div>
+        <!-- Bottom row charts -->
+        <div class="col-span-3 glass-panel rounded-2xl p-4 flex flex-col" style="height:260px;">
+          <div class="flex items-center space-x-2 mb-2"><div class="w-1 h-4 bg-brand-accent rounded"></div><h3 class="text-[10px] font-bold text-gray-800 uppercase tracking-widest">Pattern of Life (Last 7 Days)</h3></div>
+          <div id="in-pol-heatmap" style="flex:1;min-height:0;"></div>
+        </div>
+        <div class="col-span-3 glass-panel rounded-2xl p-4" style="height:260px;">
+          <div class="flex items-center space-x-2 mb-3"><div class="w-1 h-4 bg-brand-accent rounded"></div><h3 class="text-[10px] font-bold text-gray-800 uppercase tracking-widest">Key Intelligence Insights</h3></div>
+          <div class="space-y-3 text-[9px]">
+            <div class="flex items-start gap-2 border-b border-brand-border/30 pb-2"><i class="fa-solid fa-shield-halved text-brand-blue text-sm flex-shrink-0 mt-0.5"></i><div><p class="font-bold text-gray-800 mb-0.5">Increased drone activity during 14:00 – 18:00</p><p class="text-gray-500">Peak activity window identified in last 7 days.</p></div></div>
+            <div class="flex items-start gap-2 border-b border-brand-border/30 pb-2"><i class="fa-solid fa-location-dot text-red-500 text-sm flex-shrink-0 mt-0.5"></i><div><p class="font-bold text-gray-800 mb-0.5">Research Zone R2 is most targeted area</p><p class="text-gray-500">3 intrusion attempts detected in last 48 hours.</p></div></div>
+            <div class="flex items-start gap-2"><i class="fa-solid fa-wifi text-orange-500 text-sm flex-shrink-0 mt-0.5"></i><div><p class="font-bold text-gray-800 mb-0.5">RF interference patterns suggest external source</p><p class="text-gray-500">Possible source located near Sector B1.</p></div></div>
+          </div>
+          <p class="text-[9px] font-mono text-brand-blue mt-3 pt-2 border-t border-brand-border/40 cursor-pointer" onclick="comingSoon()">View All Insights →</p>
+        </div>
+        <div class="col-span-3 glass-panel rounded-2xl p-4" style="height:260px;">
+          <div class="flex items-center space-x-2 mb-3"><div class="w-1 h-4 bg-brand-accent rounded"></div><h3 class="text-[10px] font-bold text-gray-800 uppercase tracking-widest">Risk Assessment by Sector</h3></div>
+          <table class="w-full text-[9px] font-mono border-separate border-spacing-y-1">
+            <thead><tr class="text-gray-400 uppercase text-[8px] tracking-wider"><th class="text-left pb-1">Sector</th><th class="text-left pb-1">Risk Level</th><th class="text-left pb-1">Trend</th><th class="text-left pb-1">Confidence</th></tr></thead>
+            <tbody>
+              <tr class="bg-white/40"><td class="py-1.5 px-1 font-bold text-gray-800">A1</td><td class="px-1"><span class="text-brand-success font-bold">Low</span></td><td class="px-1 text-brand-success">↓</td><td class="px-1">86%</td></tr>
+              <tr class="bg-white/40"><td class="py-1.5 px-1 font-bold text-gray-800">A2</td><td class="px-1"><span class="text-orange-500 font-bold">Medium</span></td><td class="px-1 text-red-500">↗</td><td class="px-1">78%</td></tr>
+              <tr class="bg-white/40"><td class="py-1.5 px-1 font-bold text-gray-800">A3</td><td class="px-1"><span class="text-red-500 font-bold">High</span></td><td class="px-1 text-red-500">↗</td><td class="px-1">81%</td></tr>
+              <tr class="bg-white/40"><td class="py-1.5 px-1 font-bold text-gray-800">B1</td><td class="px-1"><span class="text-orange-500 font-bold">Medium</span></td><td class="px-1 text-red-500">↗</td><td class="px-1">85%</td></tr>
+              <tr class="bg-white/40"><td class="py-1.5 px-1 font-bold text-gray-800">R2</td><td class="px-1"><span class="text-red-500 font-bold">High</span></td><td class="px-1 text-red-500">↗</td><td class="px-1">90%</td></tr>
+            </tbody>
+          </table>
+          <p class="text-[9px] font-mono text-brand-blue mt-2 pt-2 border-t border-brand-border/40 cursor-pointer" onclick="comingSoon()">View Full Risk Matrix →</p>
+        </div>
+      </div>
+      <p class="text-[9px] font-mono text-gray-400 text-center pb-1 shrink-0"><i class="fa-solid fa-shield-halved mr-1"></i>Intelligence is continuously updated from multiple sources. Verify before action.</p>
+    </div>
+
+  </div>
+</main>
+
+<!-- SCRIPTS — ORDER MATTERS -->
+<script src="/js/api.js?v=1783421322"></script>
+<script src="/js/pages/airspace.js?v=1783421322"></script>
+<script src="/js/pages/safety.js?v=1783421322"></script>
+<script src="/js/pages/temporal.js?v=1783421322"></script>
+<script src="/js/pages/predictive.js?v=1783421322"></script>
+<script src="/js/pages/fleet.js?v=1783421322"></script>
+<script src="/js/pages/algo.js?v=1783421322"></script>
+<script src="/js/pages/intel.js?v=1783421322"></script>
+<script src="/js/charts/overview-charts.js?v=1783421322"></script>
+<script src="/js/pages/overview.js?v=1783421322"></script>
+<script src="/js/map.js?v=1783421322"></script>
+<script src="/js/app.js?v=1783421322"></script>
+</body>
+</html>
